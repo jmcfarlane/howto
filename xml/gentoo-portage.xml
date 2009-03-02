@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="11/18/2005">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Gentoo - portage usage, tips and tricks">
+        This document outlines how to use portage to install things,
+        and keep your setup current on patches.
+    </abstract>
+    
+    <change date="11/18/2005 @ 10:00">Initial creation</change>
+    
+    <action title="Update your list of packages" anchor="dependancies">
+        Before you ever install something on Gentoo you want to update
+        your list of packages.  This is analgous to
+        <literal>apt-get -update</literal>. Remember that this doesn't install
+        any softare, rather it just updates information about packages:
+        <br/>
+        Perform the update:
+        <code>root# emerge sync</code>
+        I recommend running this via cron daily, that way it's always up to date.
+    </action>
+    
+    <action title="Update your system - you don't want to get r00ted" anchor="update">
+        Now that you have an up to date Portage tree, you want to update
+        the actual softare on your system.
+        <code>root# emerge -uDa world</code>
+        Here's what that means:
+        <list>
+        	<element>emerge (install)</element>
+        	<element><literal>u</literal> (update)</element>
+        	<element><literal>D</literal> (deep, so dependancies are also used)</element>
+        	<element><literal>a</literal> (ask permission before installing!)</element>
+        </list>
+        What you will see is a list of sofware that is about to be installed.
+        Look thru the list and make sure you are comfortable with everything,
+        and if so.... type <literal>y</literal> to go ahead and do it, otherwise
+        type <literal>n</literal> to bail.
+    </action>
+    
+    <action title="Check to see if any config files need to be updated" anchor="check_configs">
+        Portage will automatically handle any trivial changes, but sometimes
+        there are changes that you need to manage.
+        <code>root# etc-update</code>
+        Here's what you do next:
+        <list>
+        	<element>
+        		Look at the list of configuration files it gives you.  Look
+        		for any config files you care about, or recognize.  For example
+        		if you run apache or php and there are config files related
+        		to either, then manage these first.
+        		<list>
+        			<element>Type the number next to the config file</element>
+        			<element>
+        				example: <literal>4</literal>
+        				This will select this particular config and present
+        				you with a list of the differences (in less)
+        			</element>
+        			<element>Hit <literal>q</literal> to exit less</element>
+        			<element>
+        				Now you should see a menu asking what you want to do.
+        				Pick...
+        			</element>
+        		</list>
+        	</element>
+        	<element>Once you've dealt with all config's that you care about
+        		you can feel free to let the system take care of the rest.  Type
+        		<literal>-3</literal> and it will go thru and replace each
+        		config with the updated version.  For each one it will prompt
+        		to delete the old version, go ahead and hit <literal>y</literal>
+        		for each one.
+        	</element>
+        </list>
+    </action>
+
+    <!--
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->    
+</guide>

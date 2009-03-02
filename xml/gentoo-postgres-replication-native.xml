@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="02/14/2007">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Gentoo - PostgreSQL replication (native)">
+        This document will go thru a step by step implementation of native PostgreSQL
+        replication.
+    </abstract> 
+    <convention>This howto is intended for >=Postgres-7.3.1</convention>
+    <convention>This howto assumes you have portage-utils installed</convention>
+    <convention>This howto assumes your db superuser is: postgres</convention>
+	<convention>This howto assumes you have postgres configured to support TCP/IP</convention>
+
+    <change date="02/14/2007 @ 10:00">Initial creation</change>
+    
+    <action title="Introduction" anchor="intro">
+    	Database replication is awesome. I've heard some describe
+    	replication as a nightmare that's only used when the database
+    	wasn't designed properly in the first place. I think that's
+    	rubbish. Before you move on I really recommend that you read up
+    	on
+    	<link uri="http://en.wikipedia.org/wiki/Database_replication">
+    		replication
+    	</link>
+    	and more specifically
+    	<link
+    		uri="http://en.wikipedia.org/wiki/Database_replication#Database_replication">
+    		database replication
+    	</link>.
+    	Be sure to take note that <i>replication</i> is very different than
+    	<i>clustering</i>. Replication is a <lt>master-slave</lt>
+    	technology while true clustering is <lt>multi-master</lt>. For the time
+    	being, if you really need clustering you should prolly look towards
+    	<link uri="http://en.wikipedia.org/wiki/Oracle_RAC">Oracle Rac</link>.
+    	<p>
+			This tutorial assumes that you want to explore PostgreSQL's
+			native implementation of replication, which is probably one
+			of the easier to understand and implement. I belive it was a
+			project named "DBMirror" that was moved into the official
+			PostgreSQL Contrib beginning with 7.3.1. There are all sorts
+			of more sophisticated replication packages out there, if you
+			need something more feature rich:
+			<list>
+				<el>
+					<link
+						uri="http://gborg.postgresql.org/project/slony1/projdisplay.php">
+						Slony-1
+					</link>
+				</el>
+				<el>
+					<link
+						uri="http://gborg.postgresql.org/project/pgreplication/projdisplay.php">
+						PGreplication
+					</link>
+				</el>
+				<el>
+					<link
+						uri="http://pgcluster.projects.postgresql.org/">
+						PGCluster
+					</link>
+				</el>
+				<el>
+					<link
+						uri="http://pgfoundry.org/projects/pgpool/">
+						PGPool
+					</link>
+				</el>
+				<el>
+					<link
+						uri="http://sourceforge.net/projects/dbbalancer/">
+						DBBalancer
+					</link>
+				</el>
+				<el>
+					<link
+						uri="http://www.openminds.co.uk/high_availability_solutions/databases/postgresql.htm">
+						Open Minds
+					</link> (<i>Commercial</i>)
+				</el>
+			</list>
+			<link uri="http://www.edoceo.com/liber/db-postgresql-replication.php">
+				REFERENCE
+			</link>
+    	</p>
+    </action>
+    
+    <action title="Create a directory to hold the configuration" anchor="mkdir">
+    	This howto will have you create a few files.  Some are only used and
+    	then can be deleted, a few of them are actually used as config files
+    	for running the replication.
+    	<code>
+user# mkdir cluster <cmt># Make this wherever you want it</cmt>
+user# cd cluster
+    	</code>
+    </action>
+    
+    <action title="Installation" anchor="install">
+    	Because the replication features are actually part of PostgreSQL
+    	all you really need is to make sure you have <lt>postgresql</lt>
+    	and the PostgreSQL Perl module <lt>pgperl</lt>. For us Gentoo cats this
+    	means:
+    	<code>
+root# emerge --sync
+root# emerge -a postgresql  <cmt>#Answer "N" if you already have the latest</cmt>
+root# emerge -a pgperl
+    	</code>
+    	
+    	It's important to know the location of a few files as we'll need them
+    	later.  Here's a list of what you'll need:
+    	<code>
+user# equery files postgresql | grep \
+	-e DBMirror \
+	-e MirrorSetup \
+	-e AddTrigger \
+	-e slaveDatabase \
+	-e pending.so
+	
+<cmt># Should return a list like this:
+/usr/bin/DBMirror.pl
+/usr/lib/postgresql/pending.so  # This is what provides the love
+/usr/share/postgresql/contrib/AddTrigger.sql
+/usr/share/postgresql/contrib/MirrorSetup.sql
+/usr/share/postgresql/contrib/slaveDatabase.conf
+</cmt>
+    	</code>
+    	<tip>
+    		If you don't get this list of files Stop!  You don't have everything
+    		you need.  If you happen to be running another distribution you
+    		might need to install the <lt>contrib</lt> package. For example on
+    		Debian you should: <lt>apt-get install postgresql-contrib-8.x</lt>
+    	</tip>
+    	I will always use full paths when referring to the above files, but it
+    	helps to know that the postgresql install actually installed them.
+    </action>
+    
+    <action title="Create the master/slave databases" anchor="create-dbs">
+    	First you need to create two databases, then you need to populate
+    	their schemas.
+    	<list>
+    		<el>
+    			<code>
+user# createdb -U postgres -E UTF-8 -O postgres cluster-master
+user# createdb -U postgres -E UTF-8 -O postgres cluster-slave01
+user# createdb -U postgres -E UTF-8 -O postgres cluster-slave02
+    			</code>
+    		</el>
+    		<el>
+    			Create a simple schema file for use with populating all three:
+    			<code>
+user# nano -w cluster.sql
+
+<cmt># Make the file have this content:</cmt>
+CREATE TABLE car(
+	uid SERIAL PRIMARY KEY,
+	name VARCHAR,
+	make VARCHAR,
+	model VARCHAR
+);
+    			</code>
+    		</el>
+    		<el>
+    			Populate the schema for all of the clustered db(s):
+    			<code>
+user# psql -U postgres cluster-master &lt; cluster.sql
+user# psql -U postgres cluster-slave01 &lt; cluster.sql
+user# psql -U postgres cluster-slave02 &lt; cluster.sql
+    			</code>
+    		</el>
+    	</list>
+    </action>
+        
+    <action title="Configure the master for replication" anchor="config-master">
+    	Now we need to update the schema of the master so it can understand
+    	the types of questions the slaves will be asking of it:
+    	<code>
+user# psql -U postgres cluster-master &lt; /usr/share/postgresql/contrib/MirrorSetup.sql
+    	</code>
+    	The master also needs a trigger that does the work of exposing
+    	the desired tables to the slaves. This means you need one
+    	trigger per table that you want replicated. This makes it easy
+    	to only replicate the certain tables. This makes it hard if you
+    	want to replicate everything, deal with it :)
+    	<code>
+user# cp /usr/share/postgresql/contrib/AddTrigger.sql AddTrigger.sql
+user# nano -w AddTrigger.sql
+
+<cmt># Make it look like this</cmt>
+-- Adjust this setting to control where the objects get created.
+SET search_path = public;
+
+CREATE TRIGGER "mirror_car"
+AFTER INSERT OR DELETE OR UPDATE ON "car"
+FOR EACH ROW EXECUTE PROCEDURE "recordchange" ();
+
+--Uncomment this if you also want to replicate the "boat" table:
+--CREATE TRIGGER "mirror_boat"
+--AFTER INSERT OR DELETE OR UPDATE ON "boat"
+--FOR EACH ROW EXECUTE PROCEDURE "recordchange" ();
+    	</code>
+    	Now we need to actually create the trigger(s), this step is similar
+    	to when we populated the schema;
+    	<code>
+user# psql -U postgres cluster-master &lt; AddTrigger.sql
+    	</code>
+    	From a schema perspective, the master is now ready to replicate.
+    </action>
+    
+    <action title="Configure the slave(s) for replication" anchor="config-slaves">
+    	The slave configuration is a bit different.  You don't change the
+    	schema, you simply create a text file per slave.  We will make one
+    	file per slave:
+    	<code>
+user# cp /usr/share/postgresql/contrib/slaveDatabase.conf slave01.conf
+user# cp /usr/share/postgresql/contrib/slaveDatabase.conf slave02.conf    	
+    	</code>
+    	You'll now need to edit both files to specify the details of each
+    	slave.  Here's what slave01 should look like, you can model slave02.conf
+    	after it:
+    	<code>
+#########################################################################
+# Config file for DBMirror.pl
+# This file contains a sample configuration file for DBMirror.pl
+# It contains configuration information to mirror data from 
+# the master database to a single slave system.
+#
+# $PostgreSQL: pgsql/contrib/dbmirror/slaveDatabase.conf,v 1.3 2004/09/10 04:31:06 neilc Exp $
+#######################################################################
+
+$masterHost = "localhost";
+$masterDb = "cluster-master";
+$masterUser = "postgres";
+$masterPassword = "postgrespassword";
+
+# Where to email Error messages to
+# $errorEmailAddr = "me@mydomain.com";
+
+$slaveInfo->{"slaveName"} = "db-slave01";
+$slaveInfo->{"slaveHost"} = "localhost";
+$slaveInfo->{"slaveDb"} = "cluster-slave01";
+$slaveInfo->{"slavePort"} = 5432;
+$slaveInfo->{"slaveUser"} = "postgres";
+$slaveInfo->{"slavePassword"} = "postgrespassword";
+# If uncommented then text files with SQL statements are generated instead
+# of connecting to the slave database directly. 
+# slaveDb should then be commented out.
+# $slaveInfo{"TransactionFileDirectory"} = '/tmp';
+
+#
+# The number of seconds dbmirror should sleep for between checking to see
+# if more data is ready to be mirrored.
+$sleepInterval = 60;
+    	</code>
+    </action>
+    
+    <action title="Final magic to bring it all together" anchor="enable-config">
+    	Currently the master and slave(s) all support replication, yet the
+    	master doesn't know <i>who</i> it's supposed to replicate to.  We
+    	need to essentially tell the master who her children are:
+    	<code>
+user# psql -U postgres cluster-master
+
+<cmt>-- We're now in the psql subsystem</cmt>
+cluster-master=# INSERT INTO dbmirror_mirrorhost VALUES (1, 'db-slave01');
+<cmt>INSERT 0 1</cmt>
+cluster-master=# INSERT INTO dbmirror_mirrorhost VALUES (2, 'db-slave02');
+<cmt>INSERT 0 1</cmt>
+
+<cmt># Exit the psql subsystem:</cmt>
+cluster-master=# \q
+    	</code>
+    </action>
+    
+    <action title="Startup replication" anchor="mirror-start">
+    	Ok, here we go.  We are going to fire up two replication services,
+    	one for each slave:
+    	<code>
+user# /usr/bin/DBMirror.pl slave01.conf &gt;/dev/null 2&gt;/dev/null &amp;
+user# /usr/bin/DBMirror.pl slave02.conf &gt;/dev/null 2&gt;/dev/null &amp;
+    	</code>
+    	Now the slaves will check every 60 seconds to see if there is anything
+    	they should know about.  You can update this time in <lt>slave0x.conf</lt>.
+    </action>
+    
+    <action title="Test to make sure it's really working" anchor="test">
+    	We will perform all of this testing by doing database queries.  Since
+    	we'll need to jump around from db to db, I'll do things in an awkward 
+    	way that happens to lend it self to cutting and pasting.  You do like
+    	to cut and paste don't you?
+    	<code>
+<cmt># Validate all three db's are in fact empty:</cmt>
+user# psql -U postgres cluster-master -c 'SELECT * FROM car;'
+<cmt>
+ uid | name | make | model 
+-----+------+------+-------
+(0 rows)
+</cmt>
+user# psql -U postgres cluster-slave01 -c 'SELECT * FROM car;'
+<cmt>
+ uid | name | make | model 
+-----+------+------+-------
+(0 rows)
+</cmt>
+user# psql -U postgres cluster-slave02 -c 'SELECT * FROM car;'
+<cmt>
+ uid | name | make | model 
+-----+------+------+-------
+(0 rows)
+</cmt>
+
+<cmt># Insert a new car into our master database:</cmt>
+user# psql -U postgres cluster-master -c "INSERT INTO car(name, make, model) VALUES('foo', 'Honda', 'Accord');"
+<cmt>INSERT 0 1</cmt>
+
+<cmt># See what's in the first slave:</cmt>
+user# psql -U postgres cluster-slave01 -c 'SELECT * FROM car;'
+<cmt>
+ uid | name | make  | model  
+-----+------+-------+--------
+   1 | foo  | Honda | Accord
+(1 row)
+</cmt>
+
+<cmt># Sweet mother!, is it in slave02 too?:</cmt>
+user# psql -U postgres cluster-slave02 -c 'SELECT * FROM car;'
+<cmt>
+ uid | name | make  | model  
+-----+------+-------+--------
+   1 | foo  | Honda | Accord
+(1 row)
+</cmt>
+    	</code>
+    	Well, there you have it.  One master database that's replicating to
+    	two cute little children.  Good job, get yourself a cookie.
+    </action>
+    
+    <action title="How to replicate accross a network" anchor="network">
+    	This is pretty easy, just update the <lt>slave0x.conf</lt> files to specify
+    	the actual hostname on the network (not localhost) and make the
+    	corresponding change(s) when you run the INSERT statements.  You also
+    	need to run the slave commands on... the slaves  :)
+    	<p>
+    		When I get time I'll flesh this out in more detail
+    	</p>
+    </action>
+       
+</guide>

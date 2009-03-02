@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="01/05/2004">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Openoffice.org - postgresql setup">
+        This document will show step by step how to setup Openoffice.org to be able to import
+        data from postgresql.
+    </abstract> 
+    <convention>This howto relies on Openoffice.org 1.1 rc3 and Postgresql 7.3.5</convention>
+    <convention>This howto was based on OpenOffice.org documentation found
+        <link uri="http://dba.openoffice.org/drivers/postgresql/">here</link>.
+    </convention>
+    <change date="11/05/2004 @ 23:22">Added notes for installation of oo and postgresql; corrected lines missing root#</change>
+    
+    <action title="Install Openoffice.org 1.1 rc3" anchor="install_ooo">
+    	<code>
+user# sudo emerge openoffice
+    	</code>
+    </action>
+    
+    <action title="Install Postgresql 7.3.5" anchor="install_postgres">
+        To install Postgres on Gentoo, see <link uri="gentoo-postgres-install.xml">this howto</link>
+    </action>
+       
+    <action title="Install the Openoffice.org postgresql sdbc driver" anchor="install_sdbc">
+        Change to the main Openoffice.org install program directory. For me this is:
+        <code>
+user# cd /usr/local/OpenOffice.org1.1.0/program
+        </code>
+        Now we need to download the 
+            <link uri="http://dba.openoffice.org/drivers/postgresql/postgresql-sdbc-0.5.0.zip">driver</link>
+        from openoffice.org. This file is a zip file which needs to be placed in the main 
+        OpenOffice1.1/share/uno_packages directory. For me this is:
+        <code>
+root# cd /usr/local/OpenOffice.org1.1.0/share/uno_packages
+root# wget http://dba.openoffice.org/drivers/postgresql/postgresql-sdbc-0.5.0.zip    
+        </code>
+        You want to leave the zip file alone, as Openoffice.org deal with the extraction and things.
+        Now you need to tell Openoffice.org about the new driver, go to the program directory to do this.
+        For me this is:
+        <code>
+root# cd /usr/local/OpenOffice.org1.1.0/program
+root# ./pkgchk --shared        
+        </code>
+        If nothing is posted to the console, then we can assume the installation went well :)
+    </action>
+    
+    <action title="Start up Openoffice.org calc and start importing data" anchor="open_oo_calc">
+        At this point your Openoffice.org rig should be setup and ready. So when you go to:
+        <br/>
+        <b>Menu : Data Sources : New Data Source</b>
+        <br/><br/>
+        you should have "Postgresql" as a valid choice in the drop down menu
+        <br />
+        The last catch is the "Data source URL" which took me a second to figure out. Mine looks likes this:
+        <br/><br/>
+        <b>sdbc:postgresql:dbname=rockfloat_monkey user=foouser password=foopassword</b>
+        <br />
+        <br />
+        Enjoy your new setup  :)
+    </action>
+    
+    <!--
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->    
+</guide>

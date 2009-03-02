@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="10/5/2005">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Gentoo - time Series Monitoring">
+    	This document is a beginners guide on how to graphically monitor
+    	things like network and disk IO, CPU utilization, and memory
+    	consumption.
+    </abstract>
+    <change date="10/05/2005 @01:00">Initial creation</change>
+    
+    <action title="Introduction" anchor="intro">
+    	It can be very difficult to keep track of the health of your
+    	servers if the only means of keeping track is to perodically
+    	login and run <lt>top</lt>. It's much more usefull to graphically monitor
+    	the health over time.  For example, it makes it much easier to calculate
+    	how much RAM you will need in a few months if the demand increases as
+    	it has over the past few months.
+    	<p>
+    		There are lots of tools to help in this regard. One thing
+    		that needs to be understood up front is that this howto does
+    		not touch on monitoring, so as to receive notification if
+    		something is exceeding a threshold. You will want to look
+    		toward
+    		<link uri="http://www.nagios.org">Nagios</link> for things like that.
+    	</p>
+    	<p>
+    		We will use the following tools to accomplish this task:
+    		<table>
+    			<header>
+    				<col>Name</col>
+    				<col>Purpose</col>
+    			</header>
+    			<row>
+    				<col>
+    					<link uri="http://www.net-snmp.org/">Net-SNMP</link>
+    				</col>
+    				<col>
+
+    					This will expose raw data like memory, cpu, and
+    					network access on the server. It exposes it
+    					using the standard snmp protocol.
+
+    				</col>
+    			</row>
+    			<row>
+    				<col>
+						<link uri="http://oss.oetiker.ch/rrdtool/">RRDtool</link>
+					</col>
+    				<col>
+
+    					This is both a database format, and set of tools
+    					designed to manipulate the database and produce
+    					very pretty graphs.
+
+    				</col>
+    			</row>
+    			<row>
+    				<col>
+    					<link uri="http://oss.oetiker.ch/mrtg/">MRTG</link>
+    				</col>
+    				<col>
+    					We are going to use this as an snmp client that will
+    					query the servers and write to an rrdtool compliant
+    					database.
+    				</col>
+    			</row>
+    		</table>
+    	</p>
+    	<p>
+    		Much of this howto was derived from the <lt>drwindows</lt> tutorial
+    		on the Gentoo Forums.
+    		<link uri="http://forums.gentoo.org/viewtopic-t-233304.html">
+    			REFERENCE
+    		</link>
+    	</p>
+    </action>
+    
+    <action title="Install Net-SNMP" anchor="install-snmp">
+    	Install Net-SNMP per the usual:
+    	<code>root# emerge -a net-snmp</code>
+    	This will install both an snmp server and client.
+    </action>
+    
+    <action title="Configure Net-SNMP server" anchor="configure-snmp-server">
+    	Net-snmp lets you configure what/how information is exposed in
+    	it's main configuration file: <lt>/etc/snmp/snmpd.conf</lt>.
+		You can create one by running <lt>snmpconf -g basic_setup</lt> and
+		answering the prompts.  For now just make it look like this:
+		<code>
+com2sec local     127.0.0.1/32  public
+com2sec local     10.0.2.0/24   public
+
+group MyROGroup v1              local
+group MyROGroup v2c             local
+group MyROGroup usm             local
+
+view all    included  .1        80
+
+access MyROGroup ""     any     noauth    exact  all    none   none
+
+syslocation Cincinnati
+syscontact John McFarlane
+		</code>
+    	<p>
+    		There are a few steps left to complete this step:
+    		<list>
+    			<element>
+    				Start the Net-snmp <i>publisher</i>:
+    				<code>root# /etc/init.d/snmpd start</code>
+    			</element>
+    			<element>
+    				Set Net-snmp to start on bootup:
+    				<code>root# rc-update add snmpd default</code>
+    			</element>
+    			<element>
+    				Test to see what data is being exposed by Net-snmp:
+    				<code>root# snmpwalk -v 1 -c public HOSTNAME</code>
+    			</element>
+    		</list>
+    	</p>
+    </action>
+
+	<action title="Install MRTG" anchor="install-mrtg">
+		Install MRTG per the usual:
+		<code>
+root# emerge -a mrtg
+root# mkdir -p /etc/mrtg/devices
+root# mkdir -p /etc/mrtg/graphs
+		</code>
+	</action>
+	
+	<action title="Configure MRTG" anchor="configure-mrtg">
+		I have always used one configuration file for MRTG, and one per device
+		monitored.  Let's take them one by one:
+		<list>
+			<element>
+				Make the main MRTG configuration <lt>/etc/mrtg/mrtg.cfg</lt>
+				look like this:
+				<code>
+WorkDir: /var/lib/mrtg
+Logdir: /var/log
+LogFormat: rrdtool
+RunAsDaemon: No
+
+LoadMIBs: /usr/share/snmp/mibs/UCD-SNMP-MIB.txt, /usr/share/snmp/mibs/TCP-MIB.txt, /usr/share/snmp/mibs/HOST-RESOURCES-MIB.txt
+				</code>
+			</element>
+			<element>
+				Here are some tips on how to gather details you will need
+				in the next step.
+				<code>
+root# snmptable -v 1 -c public `hostname` ifTable | cut -b-33
+				</code>
+			</element>
+			<element>
+				Create the first device configuration
+				<lt>/etc/mrtg/devices/HOSTNAME.inc</lt>:
+				<code>
+Target[HOSTNAME.usrsys]: ssCpuRawUser.0&#38;ssCpuRawSystem.0:public@HOSTNAME
+MaxBytes[HOSTNAME.usrsys]: 100
+Title[HOSTNAME.usrsys]: CPU usr sys
+
+Target[HOSTNAME.idlenice]: ssCpuRawIdle.0&#38;ssCpuRawNice.0:public@HOSTNAME
+MaxBytes[HOSTNAME.idlenice]: 100
+Title[HOSTNAME.idlenice]: CPU idle nice
+
+Target[HOSTNAME.tcpopen]: tcpCurrEstab.0&#38;tcpCurrEstab.0:public@HOSTNAME
+MaxBytes[HOSTNAME.tcpopen]: 1000000
+Title[HOSTNAME.tcpopen]: Open TCP connections
+Options[HOSTNAME.tcpopen]: gauge
+
+Target[HOSTNAME.proc]: hrSystemProcesses.0&#38;hrSystemProcesses.0:public@HOSTNAME
+MaxBytes[HOSTNAME.proc]: 1000
+Title[HOSTNAME.proc]: Number of running processes
+Options[HOSTNAME.proc]: gauge
+
+Target[HOSTNAME.freemem]: memTotalFree.0&#38;memTotalFree.0:public@HOSTNAME
+MaxBytes[HOSTNAME.freemem]: 1000000
+Title[HOSTNAME.freemem]: Free Memory Total
+Options[HOSTNAME.freemem]: gauge
+
+Target[HOSTNAME.ram.swap]: memAvailReal.0&#38;memAvailSwap.0:public@HOSTNAME
+MaxBytes[HOSTNAME.ram.swap]: 456488
+Title[HOSTNAME.ram.swap]: RAM vs swap Free Memory
+Options[HOSTNAME.ram.swap]: gauge
+
+Target[HOSTNAME.diskspercent]: .1.3.6.1.4.1.2021.9.1.9.1&#38;.1.3.6.1.4.1.2021.9.1.9.2:public@HOSTNAME
+MaxBytes[HOSTNAME.diskspercent]: 100
+Title[HOSTNAME.diskspercent]: disk usage percent
+Options[HOSTNAME.diskspercent]: gauge,nopercent
+
+Target[HOSTNAME.disks.usage]: .1.3.6.1.4.1.2021.9.1.7.1&#38;.1.3.6.1.4.1.2021.9.1.7.2:public@HOSTNAME
+MaxBytes1[HOSTNAME.disks.usage]: 24691824
+MaxBytes2[HOSTNAME.disks.usage]: 14048404
+Title[HOSTNAME.disks.usage]: disk available totals
+Options[HOSTNAME.disks.usage]: gauge,nopercent
+
+Target[elk.traffic]: \eth0:public@elk:
+MaxBytes[elk.traffic]: 12500000
+Title[elk.traffic]: 10.0.1.5 -- elk
+				</code>
+				Rinse and repeat for other devices you want to monitor.
+				<tip>
+					You can monitor almost anything.  You'll want to use snmpwalk to get
+					the syntax for the <lt>Target</lt> portion of the config
+					as it relates to the device in question.
+				</tip>
+				Here's an example of what you might use to monitor a router:
+				<code>
+Target[HOSTNAME.traffic]: 2:public@IP-ADDRESS
+MaxBytes1[HOSTNAME.traffic]: 250000
+MaxBytes2[HOSTNAME.traffic]: 125000
+Title[HOSTNAME.traffic]: Cable Modem Traffic Analysis
+				</code>
+			</element>
+			<element>
+				Include you device config(s) into the main MRTG configuration
+				by appending to the end of <lt>/etc/mrtg/mrtg.cfg</lt>:
+				<code>
+Include: devices/HOSTNAME.inc
+#Include: devices/foobar.inc
+				</code>
+			</element>
+		</list>
+	</action>
+	
+	<action title="Install RRDtool" anchor="instal-rrdtool">
+		Add the <lt>perl</lt> USE flag to <lt>/etc/portage.package.use</lt>
+		like this:
+		<code>
+root# echo net-analyzer/rrdtool perl > /etc/portage.package.use
+		</code>
+		Install RRDtool per the usual:
+		<code>root# emerge -a rrdtool</code>
+	</action>
+	
+	<action title="Initialize the databases using RRDtool" anchor="create-dbs">
+		
+		<code>
+root# rrdtool create /var/lib/mrtg/`hostname`.disks.usage.rrd \
+--start `date +"%s"` \
+DS:ds0:GAUGE:600:0:24691824 \
+DS:ds1:GAUGE:600:0:14048404 \
+--step 300 \
+RRA:AVERAGE:0.5:1:800 \
+RRA:AVERAGE:0.5:6:800 \
+RRA:AVERAGE:0.5:24:800 \
+RRA:AVERAGE:0.5:288:800 \
+RRA:MIN:0.5:1:800 \
+RRA:MIN:0.5:6:800 \
+RRA:MIN:0.5:24:800 \
+RRA:MIN:0.5:288:800 \
+RRA:MAX:0.5:1:800 \
+RRA:MAX:0.5:6:800 \
+RRA:MAX:0.5:24:800 \
+RRA:MAX:0.5:288:800
+
+root# rrdtool create /var/lib/mrtg/`hostname`.ram.swap.rrd \
+--start `date +"%s"` \
+DS:ds0:GAUGE:600:0:1034728 \
+DS:ds1:GAUGE:600:0:506036 \
+--step 300 \
+RRA:AVERAGE:0.5:1:800 \
+RRA:AVERAGE:0.5:6:800 \
+RRA:AVERAGE:0.5:24:800 \
+RRA:AVERAGE:0.5:288:800 \
+RRA:MIN:0.5:1:800 \
+RRA:MIN:0.5:6:800 \
+RRA:MIN:0.5:24:800 \
+RRA:MIN:0.5:288:800 \
+RRA:MAX:0.5:1:800 \
+RRA:MAX:0.5:6:800 \
+RRA:MAX:0.5:24:800 \
+RRA:MAX:0.5:288:800
+
+root# rrdtool create /var/lib/mrtg/`hostname`.freemem.rrd \
+--start `date +"%s"` \
+DS:ds0:GAUGE:600:0:1034728 \
+DS:ds1:GAUGE:600:0:506036 \
+--step 300 \
+RRA:AVERAGE:0.5:1:800 \
+RRA:AVERAGE:0.5:6:800 \
+RRA:AVERAGE:0.5:24:800 \
+RRA:AVERAGE:0.5:288:800 \
+RRA:MIN:0.5:1:800 \
+RRA:MIN:0.5:6:800 \
+RRA:MIN:0.5:24:800 \
+RRA:MIN:0.5:288:800 \
+RRA:MAX:0.5:1:800 \
+RRA:MAX:0.5:6:800 \
+RRA:MAX:0.5:24:800 \
+RRA:MAX:0.5:288:800
+
+root# rrdtool create /var/lib/mrtg/`hostname`.traffic.rrd \
+--start `date +"%s"` \
+DS:ds0:COUNTER:600:0:50000 \
+DS:ds1:COUNTER:600:0:25000 \
+--step 300 \
+RRA:AVERAGE:0.5:1:800 \
+RRA:AVERAGE:0.5:6:800 \
+RRA:AVERAGE:0.5:24:800 \
+RRA:AVERAGE:0.5:288:800 \
+RRA:MIN:0.5:1:800 \
+RRA:MIN:0.5:6:800 \
+RRA:MIN:0.5:24:800 \
+RRA:MIN:0.5:288:800 \
+RRA:MAX:0.5:1:800 \
+RRA:MAX:0.5:6:800 \
+RRA:MAX:0.5:24:800 \
+RRA:MAX:0.5:288:800 
+		</code>
+	</action>
+	
+	<action title="Populate the rddtool databases" anchor="run-mrtg">
+		We are using MRTG to make the snmp queries, and write to the RRDtool
+		databases. Off we go:
+		<code>root# mrtg /etc/mrtg/mrtg.cfg</code>
+	</action>
+	
+	<action title="Create bash scripts to generate graphs" anchor="graph-scripts">
+		Here are a few examples of RRDtool graphing scripts:
+		<list>
+			<element>
+				CPU <lt>/etc/mrtg/graphs/HOSTNAME-cpu.bash</lt>:
+				<code>
+#!/bin/bash
+#Generates a CPU info graph
+###########################
+
+HOST=elk
+
+case $1 in
+   day)
+      INTERVAL=86400;;
+   week)
+      INTERVAL=604800;;
+   month)
+      INTERVAL=2678400;;
+   year)
+      INTERVAL=31622400;;
+   *)
+      INTERVAL=86400;;
+esac
+
+if [ $INTERVAL == 86400 ]; then
+   INTERVALSTR="day"
+else
+   INTERVALSTR="$1"
+fi
+
+echo Generating cpu.percent.${HOST}.$INTERVALSTR.png
+echo Using $INTERVAL interval
+
+rrdtool graph /rf/blobs/rockfloat/rrdtool/cpu.percent.${HOST}.$INTERVALSTR.png \
+-s -$INTERVAL \
+-a PNG \
+-z \
+DEF:user=/var/lib/mrtg/${HOST}.usrsys.rrd:ds0:AVERAGE \
+DEF:system=/var/lib/mrtg/${HOST}.usrsys.rrd:ds1:AVERAGE \
+DEF:idle=/var/lib/mrtg/${HOST}.idlenice.rrd:ds0:AVERAGE \
+DEF:nice=/var/lib/mrtg/${HOST}.idlenice.rrd:ds1:AVERAGE \
+"CDEF:total=100,idle,-" \
+COMMENT:"                 Max        Avg     Current\n" \
+AREA:system#FF4000:"System  " \
+GPRINT:system:MAX:'%7.2lf %%' \
+GPRINT:system:AVERAGE:"%7.2lf %%" \
+GPRINT:system:LAST:"%7.2lf %%\n" \
+STACK:user#0080FF:"User    " \
+GPRINT:user:MAX:'%7.2lf %%' \
+GPRINT:user:AVERAGE:"%7.2lf %%" \
+GPRINT:user:LAST:"%7.2lf %%\n" \
+STACK:nice#00FFFF:"Nice    " \
+GPRINT:nice:MAX:'%7.2lf %%' \
+GPRINT:nice:AVERAGE:"%7.2lf %%" \
+GPRINT:nice:LAST:"%7.2lf %%\n" \
+LINE1:total#008080:"CPU     " \
+GPRINT:total:MAX:'%7.2lf %%' \
+GPRINT:total:AVERAGE:"%7.2lf %%" \
+GPRINT:total:LAST:"%7.2lf %%\n" \
+-v "%" -t "CPU usage - $INTERVALSTR" -l 0
+				</code>
+				<code>root# chmod 755 /etc/mrtg/graphs/`hostname`.bash</code>
+			</element>
+		</list>
+	</action>
+	
+	<action title="Generate all the graphs" anchor="run-graphs">
+		We'll use another bash script to loop thru and run all of the
+		RRDtool graphing scripts <lt>/etc/mrtg/gen-graphs.bash</lt>:
+		<code>
+#!/bin/bash
+
+echo "The graphs are likely running now too.. give them a sec to finish"
+sleep 30
+
+cd /etc/mrtg/graphs
+for file in *.bash; do
+	echo 'Running ${file}...'
+	./$file
+	echo ''
+done
+		</code>
+		Actually generate the graphs:
+		<code>
+root# chmod 755 /etc/mrtg/gen-graphs.bash
+root# /etc/mrtg/gen-graphs.bash
+		</code>
+	</action>
+    <!--
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->    
+</guide>

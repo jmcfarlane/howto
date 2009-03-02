@@ -1,0 +1,9 @@
+Rockfloat howto documentation
+
+If you would like to browse them locally you can do the following:
+
+    user# git clone git://github.com/jmcfarlane/howto.git Howto
+    user# firefox Howto/xml/index.xml
+
+If you would like to contribute, please use Github to fork the
+repository, make any changes you like... followed by a pull request.

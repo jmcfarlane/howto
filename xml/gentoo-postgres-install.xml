@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="12/15/2003">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Gentoo - Postgres installation">
+        This document will go thru a step by step installation of PostgreSQL
+        on Gentoo Linux.
+    </abstract> 
+    <convention>Databases backups are referred to as <b>foobar.sql</b></convention>
+
+    <change date="12/15/2003 @ 21:00">Initial creation</change>
+    <change date="04/04/2006 @ 01:20">Added some more backup/restore examples</change>
+    <change date="07/20/2005 @ 18:45">Updated to Gentoo-2006.1 and Postgresql-8.0.8</change>
+    
+    <action title="Install postgresql via portage" anchor="install">
+        In order to use postgres, we need the actual server installed. This will also install some other
+        programs that are necessary such as psql.
+        <code>
+root# emerge --sync
+root# emerge -a postgresql
+        </code>
+        Portage will on your behalf add an operating system account of
+        <lt>postgres</lt> which has a home directory of
+        <lt>/var/lib/postgresql</lt>
+        <p>
+        	You will however need to add an entry into <lt>/etc/shadow</lt>
+        	for postgres:
+        	<code>
+root# echo "postgres::::::::" >> /etc/shadow
+        	</code>
+        	Else you'll get this later on:
+        	<br/><br/>
+        	<i>su: Authentication service cannot retrieve authentication info.</i>
+        </p>
+    </action>
+        
+    <action title="Make the database storage locations" anchor="db_fs">
+        <code>
+root# mkdir -p /path/db/data
+root# mkdir -p /path/db/logs
+root# chown -R postgres:postgres /path/db
+        </code>
+        If you don't want to specify the sorage location, you can just take
+        the default which is located: <lt>/var/lib/postgresql/data</lt>.  If
+        you want to use this location, just use it below as your data directory
+        and use <lt>/var/lib/postgresql/postgres.log</lt> as the log.
+    </action>
+        
+    <action title="Edit /etc/conf.d/postgresql setting the following" anchor="conf_d">
+        <code>
+PGDATA=/path/db/data
+PGLOG=/path/db/logs/postgres.log
+PGUSER=postgres
+
+# Uncomment this if you want to support TCP/IP connections
+# PGOPTS="-N 1024 -B 2048 -i"
+        </code>
+    </action>
+        
+    <action title="Initialize the database" anchor="initialize">
+        <code>
+root# su - postgres -c 'export PGDATA=/path/db/data &amp;&amp; initdb'
+        </code>
+    </action>
+    
+    <action title="Startup the database for the first time  :)" anchor="start">
+        <code>
+root# /etc/init.d/postgresql start
+        </code>
+    </action>
+        
+    <action title="Become the postgres user" anchor="su">
+        <code>
+su - postgres
+        </code>
+    </action>
+        
+    <action title="Setup our main user (reduced previlages)" anchor="user_main">
+        <code>
+psql# createuser rockfloat
+OUTPUT: Shall the new user be allowed to create databases? (y/n) n
+OUTPUT: Shall the new user be allowed to create more new users? (y/n) n
+psql# psql template1
+template1=# alter user rockfloat with password 'foobar';
+        OUTPUT: ALTER USER
+template1=# \q
+--> create the live database        
+psql# createdb rockfloat
+        OUTPUT: CREATE DATABASE
+--> populate it        
+psql# psql -e rockfloat &lt; rockfloat.sql
+
+--> create the development db        
+psql# createdb rockfloat_monkey
+        OUTPUT: CREATE DATABASE
+--> populate it        
+psql# psql -e rockfloat_monkey &lt; rockfloat.sql
+
+psql# exit
+        </code>
+    </action>
+    
+    <action title="Alternately set things up as a normal user" anchor="user_normal">
+        You can also use the client tools from a normal shell
+        account:
+        <code>
+user# createdb -E UTF-8 -O postgres -U postgres rockfloat
+        </code>
+    </action>
+        
+    <action title="Make sure postgres starts on bootup" anchor="bootup">
+        <code>
+root# rc-update add postgresql default
+        </code>
+    </action>
+        
+    <action title="If you ever need to backup a database for maybe an upgrade or something
+        use the following syntax:" anchor="backup">
+        <code>
+root# su - postgres -c 'pg_dump -c foodatabase &gt; backup.sql'
+
+<cmt># Or without using sudo:</cmt>
+user# pg_dump -U postgres foodatabase &gt; backup.sql
+        </code>
+    </action>
+    
+    <action title="To restore from either of these backups, you would do:" anchor="restore">
+        <code>
+root# su - postgres -c 'psql -e foodatabase &lt; backup.sql'
+
+<cmt># Or without using sudo:</cmt>
+user# psql -e foodatabase postgres &lt; backup.sql
+        </code>
+    </action>
+        
+    <action title="To backup one table in a particular table" anchor="backup_table">
+        <code>
+root# su - postgres -c 'pg_dump -c -t footable foodatabase &gt; tablebackup.sql'
+
+<cmt># Or without using sudo:</cmt>
+user# pg_dump -U postgres -c -t footable foodatabase &gt; tablebackup.sql
+        </code>
+    </action>
+    
+    <action title="I haven't tested this, but I assume you would then restore the table like this:" anchor="restore_table">
+        <code>
+root# su - postgres -c 'psql -e foodatabase -t footable &lt; tablebackup.sql'
+
+<cmt># Or without using sudo:</cmt>
+user# psql -e -t footable foodatabase postgres &lt; tablebackup.sql
+        </code>
+    </action>
+    
+        
+       
+</guide>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="10/05/2005">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="IRSSI - howto">
+        This document is a beginners guide to irssi, the console irc client.
+    </abstract>
+    <change date="10/05/2005 @01:00">Initial creation</change>
+    
+    <action title="Install irssi" anchor="install">
+        On gentoo installing irssi is quite simple:
+        <code>root$ emerge irssi</code>
+    </action>
+    
+    <action title="IRSSI keyboard commands" anchor="commands">
+        Here's a little list:
+	<code>
+/connect irc.freenode.net               <cmt># Connect to a server</cmt>
+/join #gentoo                           <cmt># Join the gentoo channel</cmt>
+/join ##linux                           <cmt># Join the linux channel</cmt>
+/nick foobar                            <cmt># Change your nick to "foobar"</cmt>
+/query foobar                           <cmt># Opens a private message, you type the msg</cmt>
+/wc                                     <cmt># close a channel or message window</cmt>
+/part                                   <cmt># Nicer way to leave a channel</cmt>
+/disconnect                             <cmt># Disconnect from an IRC server</cmt>
+/exit                                   <cmt># Quit IRSSI itself</cmt>
+/ignore foobar                          <cmt># Ignore someone</cmt>
+/ignore foobar MSG                      <cmt># Ignore private messages from someone</cmt>
+/ignore ##gentoo ALL -PUBLIC -ACTIONS   <cmt># Ignore parts, joins, quits</cmt>
+/rmreconns                              <cmt># Stop trying to reconnect to a server :/ </cmt>
+/topic [space][tab]                     <cmt># This autocomplets the topic</cmt>
+/topic                                  <cmt># This just prints out the topic</cmt>
+/SET autolog oN                         <cmt># Turn on autologging</cmt>
+/save                                   <cmt># Save settings</cmt>
+/q foobarnick                           <cmt># Start a private message</cmt>
+	</code>
+    </action>
+    
+    <action title="IRSSI resources" anchor="links">
+        <link uri="http://lizzie.spod.cx/screenirssi.shtml">Here's</link> a really nice IRSSI resource.
+        along with a little excerpt:
+        <br/><br/>
+    	"If you accidentally freeze screen (usually this happens if you
+    	hit ctrl+s or ctrl+a then s) you can fix it by hitting ctrl+q or
+    	ctrl+a then q. Another way to potentially break screen is if you
+    	it the pause/break button while using putty or ctrl+z, then you
+    	simply need to type fg at the command line to bring your irssi
+    	session back. The fg trick also works should you manage to make
+    	anything else in screen dissappear with ctrl+z or pause/break."
+    </action>    
+
+    <!--
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->    
+</guide>

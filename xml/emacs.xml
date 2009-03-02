@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="02/11/2006">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Emacs - howto">
+        This document is a beginners guide to emacs.
+    </abstract>
+    <convention>Please understand that I don't really understand why anyone would use a text style
+    	editor over a graphical editor like SciTE, eclipse, or jedit.  But it seems obvious
+	that some people like it, thus I'm giving emacs an earnest try.
+    </convention>
+    <change date="07/18/2004 @21:00">Added a few more keyboard commands</change>
+    
+    <action title="Install emacs" anchor="install">
+        On gentoo installing emacs is quite simple:
+        <code>
+root$ emerge emacs python-mode app-emacs/mmm-mode app-emacs/pgsgml app-emacs/tramp
+        </code>
+        If you use an X environment like gnome, kde, icewm, or fluxbox... emacs will defaultly open itself
+        up in an ncurses style gui. I find this annoying personally, thus I added the following to my
+        .bashrc file to make emacs open the old fashioned way:
+        <code>
+alias emacs="emacs -nw"
+        </code>
+    </action>
+    
+    <action title="Open emacs for the first time" anchor="open">
+        Type emacs from the a console (a fresh one if you altered your .bash rc file as suggested above)
+        and you will be presented with the mighty emacs. The first thing you will want to do is fine a 
+        file to edit:
+        <code>
+C-x C-f
+        </code>
+        This will give you a dialog in the bottom of emacs where you can type in the path to a file.  
+	If you have tramp installed, then you can do cool stuff like opening files over ssh like so:
+	<br /><br />
+	ssh://user@host.com:/path/to/file<br />
+	ftp://user@host.com:/path/to/file
+    </action>
+    
+    <action title="Keyboard commands" anchor="keyboard_commands">
+    <code>
+C-h                 = help
+C-g                 = exit out of everything but the open buffers
+C-x C-f             = file open
+C-x k               = file close (kill the current buffer)
+C-s                 = inline search (foreward)
+C-r                 = inline search (backwards)
+C-q TAB             = hard tab
+C-h k               = this will prompt and describe any keymap
+C-h m               = get valid keymaps for that mode
+C-e                 = end of line
+M-e                 = beginning of line
+C-x 1               = show x number of buffers
+C-v                 = scroll down
+M-c                 = scroll up
+C-x 2               = split window vertically
+C-x 3               = split window horizontally
+M-x replace-string  = replace from cusor to end of buffer
+C-x b               = show buffer list (iswitchb is nice here)
+C-SPACE             = mark starting point of cut/paste (includes character cursor is on)
+C-w                 = cut (from mark to position to left of cursor)
+M-w                 = copy (from mark to position to left of cursor)
+C-y                 = paste
+M-!                 = execute command
+ESC-q		    = auto format text
+C-x u		    = undo
+    </code>
+    </action>
+
+    <action title="Modes" anchor="modes">
+    	<code>
+M-x describe-mode
+M-x untabify
+M-x tabify
+M-x load-library RET tramp RET
+    	</code>
+    </action>
+
+    <action title="Helpfull links on emacs" anchor="links">
+    	- <link uri="http://rgrjr.dyndns.org/emacs/emacs_cheat.html">
+		http://rgrjr.dyndns.org/emacs/emacs_cheat.html</link><br />
+		- <link uri="http://www.emacswiki.org/cgi-bin/wiki/HtmlModeDeluxe">
+		http://www.emacswiki.org/cgi-bin/wiki/HtmlModeDeluxe</link><br />
+		- <link uri=" http://www.emacswiki.org/cgi-bin/wiki/PhpMode">
+		http://www.emacswiki.org/cgi-bin/wiki/PhpMode</link><br />
+		- <link uri="http://grok2.tripod.com/">
+		http://grok2.tripod.com/</link><br />
+		- <link uri="http://www.dotemacs.de/dotfiles/SarirKhamsi.emacs.html">
+		http://www.dotemacs.de/dotfiles/SarirKhamsi.emacs.html</link><br />
+    </action>
+
+    <!--
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->    
+</guide>

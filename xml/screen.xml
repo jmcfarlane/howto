@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="10/5/2005">
+  <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+  <abstract title="Screen - howto">
+      This document is a beginners guide to screen, a program that lets
+      you detach and later re-attach to a running program.
+  </abstract>
+  <change date="10/05/2005 @ 01:00">Initial creation</change>
+  <change date="10/30/2005 @ 16:00">
+    Added initial info on shared screens
+  </change>
+  <change date="10/02/2006 @ 15:32">
+    Added .screenrc file, replaced ctrl+a with ctrl+o
+  </change>
+  <change date="02/20/2007 @ 20:36">
+    Added info on copy mode, link to Gentoo wiki
+  </change>
+  <change date="07/20/2008 @ 23:29">
+    Switch back to ctrl+a (I'm no longer an emacs user)
+  </change>
+  <change date="07/22/2008 @ 23:59">
+    Add link to lizzie.spod.cx (not sure how I missed that), and clean
+    up a few things
+  </change>
+
+  <action title="Install screen" anchor="install">
+    On gentoo installing screen is quite simple:
+    <code>root# emerge screen</code>
+  </action>
+    
+  <action title="Set some usefull preferences" anchor="screenrc">
+    Create the file <lt>~/.screenrc</lt> with the following contents:
+    <code>
+# Use visual bell
+vbell on
+
+# Set a big scrolling buffer
+defscrollback 5000
+
+# Set the caption on the bottom line
+caption always "%{= kw}%-w%{= BW}%n %t%{-}%+w %-= @%H - %LD %d %LM - %c"
+
+# Support UTF-8
+defutf8 on
+
+# Don't show the slash screen
+startup_message off
+    </code>
+  </action>
+    
+  <action title="Start your first screen session" anchor="start">
+    Start screen itself (<i>this will be the master screen, or number
+    <literal>0</literal></i>):
+    <code>user# screen</code>
+    Now open a program you want to be able to disconnect and connect to:
+    <code>user# irssi</code>
+  </action>
+
+	<action title="Detach from the running screen session" anchor="detach">
+		Don't worry, irssi won't actually quit, but type:
+		<literal>ctrl+a ctrl+d</literal>
+		<br/>
+		At this point you will return to your shell prompt, but irssi
+		is still running in the background, pretty neat!
+    </action>
+    
+  <action title="Reconnect to the running screen session" anchor="reconnect">
+    Here's how you reconnect to the master screen session:
+    <code>user# screen -r -d</code>
+  </action>
+    
+  <action title="Create another screen" anchor="create_another">
+    This will be the first child screen, thus named <literal>1</literal>
+    <br/>
+    Type: <literal>ctrl+a c</literal> to create it.
+    Now you should see a shell prompt again, try doing:
+    <code>user# top</code>
+    which will open up the performance monitor in this screen.
+  </action>
+    
+  <action title="Toggle between the two screens" anchor="toggle">
+    Since you now have two screens running, you have two ways to toggle
+    back and forth:
+    <list>
+      <element>
+        Use <literal>ctrl+a n</literal> to go next, and
+        <literal>ctrl+a p</literal> to go previous.
+      </element>
+      <element>
+        You can also specify the screen name by number like this:
+        <literal>ctrl+a 1</literal> to toggle to "top" and
+        <literal>ctrl+a 0</literal> to toggle to "irssi".
+      </element>
+    </list>
+  </action>
+    
+  <action title="Assign a name to the currently active screen" anchor="name">
+    Type: <literal>ctrl+a A</literal> which will give you a little
+    prompt, it will probably have <literal>bash</literal> as the
+    current name, hit the backspace key a few times, and then type
+    in a name you will recognize.  Use the enter key to save this
+    screen name.
+  </action>
+    
+  <action title="Pull up a list of all running screens" anchor="list">
+    If you get a bunch of screens running, you might need a list to
+    find one faster (here your names are super helpfull). Do:
+    <literal>ctrl+a "</literal> which will give you a list, you can
+    either type in the number [0 - 9] or use the arrow keys to
+    navigate, again just hit enter to choose it.
+  </action>
+    
+  <action title="Scrolling up/down in a screen" anchor="scrolling">
+    If you need to scroll up or down you need to enable <i>copy mode</i>.
+    To do this do: <lt>ctrl+a ESC</lt> and then use the arrow keys and page
+    up/page down keys to navigate.  When you're finished hit <lt>ESC</lt>
+    to return to normal mode.
+  </action>
+    
+  <action title="How do you close a screen?" anchor="close">
+    Closing the program running in the screen should take care of
+    it.  For example, if you do <literal>ctrl+a ctrl+n</literal>
+    which will create a new screen and leave you at a shell prompt,
+    hitting <literal>ctrl+d</literal> to exit the shell will also
+    close the screen.  If you're ever not sure who many are running,
+    just use <literal>ctrl+a "</literal> to view the ones running.
+  </action>
+    
+  <action title="Quick toggle between two screens" anchor="quick_toggle">
+    If you're using two screens and wanna quickly go back and forth
+    between them, use: <literal>ctrl+a ctrl+a</literal>
+  </action>
+    
+  <action title="Fixing a screen that seems locked" anchor="fix_lock">
+    If you hit <lt>ctrl+s</lt> or <lt>ctrl+a s</lt> you can lock the
+    screen...
+    <br/><br/>
+    The fix is to hit <literal>ctrl+a q</literal>
+  </action>
+    
+  <action title="How to list running screens" anchor="ls">
+    You can always list the screens that you have by doing:
+    <code>screen -ls</code>
+    Unfortunately this doesn't show screens of other users.  The only
+    way I [currently] know how to do this is to look using
+    <lt>ps</lt>:
+    <code>ps -ef | grep SCREEN</code>
+  </action>
+
+  <action title="Shared screens" anchor="shared_screen">
+    Temporarily make screen setuid (<i>remove this when your finished</i>):
+    <code>
+root# chmod u+s /usr/bin/screen
+root# chmod go-w /var/run/screen
+    </code>
+
+    Start a screen session:
+    <code>user# screen</code> Then do (<i>where <literal>guest</literal>
+    is the userid of the person who's going to connect to the shared
+    session, and <literal>owner</literal> is the userid of the
+    person creating the shared session, aka the person who owns the
+    computer</i>):
+    <code>
+ctrl+a :multiuser on          <cmt>#Enable shared sessions</cmt>
+ctrl+a :acladd guest          <cmt>#Give rights to guest</cmt>
+ctrl+a :aclchg guest -x "?"   <cmt>#Revoke permission to execute commands</cmt>
+    </code>
+
+    Then the other user will ssh to the box, and execute:
+    <code>user# screen -x owner/</code>
+    to join my session
+    <br/><br/>
+    <tip>
+      If you are unable to connect to the screen session try using the
+      fully qualified name, like this:
+      <lt>screen -x owner/9322.pts-2.monster</lt>
+    </tip>
+    <br/>
+    When you're finished with the session, clean things up by exiting the
+    screen session, and do: 
+    <code>
+root# chmod u-s /usr/bin/screen
+root# chmod 775 /var/run/screen
+    </code>
+  </action>
+    
+  <action title="Screwed up screens" anchor="screwed_up_screens">
+      So maybe I've had a problem where a screen session seemed to
+      locup a time or two.  Here's some really good advice from
+      <link uri="http://lizzie.spod.cx/screenirssi.shtml">
+        lizzie.spod.cx:
+      </link>
+      <p>
+        "<i>If you accidentally freeze screen (usually this happens if
+        you hit <literal>ctrl+s</literal> or <literal>ctrl+a
+        s</literal> you can fix it by hitting
+        <literal>ctrl+q</literal> or <literal>ctrl+a q</literal>.
+        Another way to potentially break screen is if you it the
+        pause/break button while using putty or
+        <literal>ctrl+z</literal>, then you simply need to type fg at
+        the command line to bring your irssi session back. The
+        <literal>fg</literal> trick also works should you manage to
+        make anything else in screen dissappear with
+        <literal>ctrl+z</literal> or pause/break.</i>"
+      </p>
+  </action>
+
+  <action title="Getting help on commands" anchor="help">
+    You can get help by using: <literal>ctrl+a ?</literal>.  The
+    Gentoo wiki also has some very good
+    <link uri="http://gentoo-wiki.com/TIP_Using_screen">
+      documentation
+    </link> on using screen.
+  </action>
+
+  <!--
+  <action title="" anchor="">
+      <code></code>
+  </action>
+  -->    
+</guide>

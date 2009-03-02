@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="02/09/2006">
+  <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+  <abstract title="Gentoo - Subversion">
+    This document outlines how to install and user the excellent
+    Subversion along with a few other tools like Apache, ViewCVS, and
+    Subclipse.  This howto assumes you want to use FSFS, and intend to
+    have more than one repository with WEBDAV as the primary means of
+    access.
+  </abstract>
+    
+  <change date="02/09/2006 @ 10:00">Initial creation</change>
+  <change date="10/03/2006 @ 17:30">
+    Switch to dav over ssh for real imports
+  </change>
+  <change date="10/14/2006 @ 17:00">
+    Typo: when using dav, it's /svn not /var/svn
+  </change>
+  <change date="11/19/2006 @ 22:13">
+    Replaced http:// call with file:// for initial import as Apache
+    isn't yet configured (credit: Adam)
+  </change>
+  <change date="01/15/2008 @ 22:14">Fixed typo (credit: Naginata)</change>
+  <change date="06/28/2008 @ 23:59">Remove link to my svn repo</change>
+  <change date="09/20/2008 @ 01:35">
+    Cleaned up a few things and added in an svn co step(s) (credit: Sting-Ray)
+  </change>
+    
+  <action title="Install Subversion and Apache" anchor="install">
+    A bit of background...
+    <pbreak/>
+    Subversion is able to store it's repositories in two different formats:
+    <list>
+      <element>FSFS <italics>(Filesystem implementation that uses the OS
+        filesystem to store data)</italics></element>
+      <element>BDB <italics>(Berkeley DB)</italics></element>
+    </list>
+    
+    The former is the new and better format while the latter was the
+    original default format and is now depricated.  Because FSFS is
+    now the default version, there's no need to mess around with the
+    <literal>berkdb</literal> USE flag.  We do however want to add
+    support for Apache, so add the <literal>apache2</literal> USE flag
+    to <literal>/etc/make.conf</literal> Mine looks like this:
+    <code>
+USE="apache2 postgres gd xml -X -gtk -gnome -qt -kde -alsa"
+    </code>
+    That being said, it's time to do the install of Subversion and
+    Apache.  If you already have Apache installed, you can skip over
+    that one.
+    <code>root# emerge -a subversion apache</code>
+  </action>
+    
+  <action title="Setup directories, users and permissions" anchor="config">
+    <code>
+<cmt># Create a group for ssh access to the repositories</cmt>
+root# groupadd svnusers
+
+<cmt># Create the directory where all repositories are kept</cmt>
+root# mkdir -p /var/svn/repos
+root# chmod -R 775 /var/svn/repos
+root# mkdir /var/svn/conf
+
+<cmt># Give Apache access to the repositories</cmt>
+root# gpasswd -a apache svnusers
+
+<cmt># Give access to yourself and whoever else you want</cmt>
+root# gpasswd -a your-username svnusers
+root# gpasswd -a your-friend svnusers
+    </code>
+  </action>
+    
+  <action title="Create a test repository" anchor="create_test">
+    A test repository is a good way to test and learn how things work.
+    For this step we're not going to use webdav to
+    communicate with Subversion as we haven't fully set that part up
+    yet.  Instead we will communicate using <lt>file://</lt>.  Later
+    we'll enable <lt>http://</lt> style access.
+    <code>
+<cmt># Create the test repository</cmt>
+root# svnadmin create /var/svn/repos/test
+
+<cmt># Set permissions!</cmt>
+root# chown -R apache:svnusers /var/svn/repos/
+root# chmod -R g-w /var/svn/repos/test
+root# chmod -R g+rw /var/svn/repos/test/db
+root# chmod -R g+rw /var/svn/repos/test/locks
+
+<cmt># Add a test directory, and validate that it's there</cmt>
+root# svn mkdir file:///var/svn/repos/test/foo -m "Creat test directory"
+root# svn ls file:///var/svn/repos/test
+<output>foo/</output>
+    </code>
+    I recommend checking this repository out and playing around with
+    it a little.  You can cleanly delete it later.
+    <code>
+user# svn co file:///var/svn/repos/test ~/Desktop/test
+user# cd ~/Desktop/test
+user# echo "hello world" > some-file
+user# svn add some-file
+user# svn commit
+user# svn log
+    </code>
+  </action>
+    
+  <action title="Create a real repository"  anchor="create_real">
+    Here we will use the <lt>svnadmin</lt> tool to create an empty
+    repository:
+    <code>
+root# svnadmin create /var/svn/repos/your-project
+
+<cmt># Set permissions!</cmt>
+root# chown -R apache:svnusers /var/svn/repos/your-project
+root# chmod -R g-w /var/svn/repos/your-project
+root# chmod -R g+rw /var/svn/repos/your-project/db
+root# chmod -R g+rw /var/svn/repos/your-project/locks        
+    </code>
+  </action>
+    
+  <action title="Typical repository structure" anchor="structure">
+    The typical repository structure looks kinda like this:
+    <code>
+project
+|--branches
+|--tags
+|--trunk
+    </code>
+    <list>
+      <element>
+        <lt>branches</lt> hold copies of the source that are being
+        actively worked on or maintained but require separation.  For
+        example the code for v4 might be inside a branch to allow
+        people to work on future changes that won't be implemented for
+        a while.  This allows them to do their work without
+        prematurely placing code in the trunk.  These branches are
+        often called "project branches".
+      </element>
+      <element>
+        <lt>tags</lt> hold copies of the software at
+        various milestones, like v1, v2, v3.
+      </element>
+      <element>
+        <lt>trunk</lt> is used to hold the most up to date
+        stable version of your software.
+      </element>
+    </list>
+
+    <br/>
+    REFERENCE:
+    <link uri="http://svnbook.red-bean.com/en/1.0/ch05s04.html">
+      http://svnbook.red-bean.com/en/1.0/ch05s04.html
+    </link>
+  </action>
+    
+  <action title="Place your project under version control" anchor="import">
+    We need to import your files into the <literal>your-project</literal>
+    respository.  I'll use a fake project named Bella as an example:
+    <list>
+      <element>
+        Look at the project you want to place under version control:
+        <code>
+user # cd ~/projects/Bella
+user # tree    <cmt># I recommend emerging tree if you don't have it</cmt>
+.
+|-- Changelog
+|-- LICENSE
+|-- README
+`-- bella
+    |-- __init__.py
+    |-- lib
+    `-- server.py
+
+2 directories, 5 files
+        </code>
+      </element>
+      <element>
+        Since I want the contents of <lt>Bella</lt> to be in
+        <lt>trunk</lt> of the
+        <lt>/var/svn/repos/bella</lt> repository, I want to
+        import my project like this:
+        <code>
+user# cd ~/projects
+user# svn import Bella file:///var/svn/repos/bella/trunk -m 'Initial import'
+<output>
+Adding...
+Adding...
+
+Committed revision 1.</output>
+        </code>
+      </element>
+      <element>
+        Validate that the files were added to the repository:
+        <code>
+root# svn ls file:///var/svn/repos/bella/trunk
+<output>
+Changelog
+LICENSE
+README
+bella/</output>
+        </code>
+      </element>
+    </list>
+  </action>
+
+  <action title="Checkout your newly versioned project" anchor="svn-co">
+    Currently your files are safe inside the repository, but you need
+    a working copy to work against:
+    <pbreak/>
+    
+    <list>
+      <element>
+        First you need to move your existing project out of the way:
+        <code>mv ~/projects/Bella ~/projects/Bella-B4-SVN</code>
+      </element>
+      <element>
+        Now you can checkout your project from the repository exactly
+        where it was before:
+        <code>svn co file:///var/svn/repos/bella/trunk ~/Projects/Bella</code>
+      </element>
+    </list>
+  </action>
+
+  <action title="Explanation of Subversion communication protocols"
+          anchor="svn-protocols">
+    Before we move on it's important to understand that technically
+    you don't need to do anything else in order to properly version
+    your project with Subversion.  The following steps of this howto
+    explain how to enable webdav access to your repositories.  Before
+    we do that let's spend a little time understanding what this
+    means.  Currently Subversion allows a few different types of
+    access to your repositories:
+    <table>
+      <header>
+        <col>Protocol</col>
+        <col>Description</col>
+      </header>
+      <row>
+        <col><lt>file://</lt></col>
+        <col>
+          This is the most basic protocol and though it works great,
+          it means you can only work on the actual box that hosts the
+          repositores.  If this works for you, there's nothing else
+          you need to do besides setup backups  :)
+        </col>
+      </row>
+      <row>
+        <col><lt>svn://</lt></col>
+        <col>
+          This protocol uses a lightweight server that communicates
+          with Subversion (in this howto we use Apache for this role).
+          To use this protocol you would need to have
+          <lt>/etc/init.d/svnserve</lt> running.
+        </col>
+      </row>
+      <row>
+        <col><lt>svn+ssh://</lt></col>
+        <col>
+          This protocol uses SSH to communicate with the server.  This
+          is actually now my preferred way to communicate with
+          Subverison, especially when you have <link
+          uri="gentoo-keychain.xml">keychain</link> properly
+          configured. 
+        </col>
+      </row>
+      <row>
+        <col><lt>http://</lt></col>
+        <col>
+          This protocol uses WEBDAV to allow communication over HTTP
+          to the Subversion repositories.  This protocol has several
+          advantages, including a more friendly setup for clients like
+          TortoiseSVN. 
+        </col>
+      </row>
+      <row>
+        <col><lt>https://</lt></col>
+        <col>
+          Same as above only with SSL encryption
+        </col>
+      </row>
+    </table>
+
+    <br/>
+    REFERENCE:
+    <link uri="http://svnbook.red-bean.com/en/1.0/ch06.html">
+      http://svnbook.red-bean.com/en/1.0/ch06.html
+    </link>
+
+    <br/><br/> 
+    TODO: Write down the permission tweaks...
+  </action>
+  
+  <action title="Configure Apache to support subversion at startup"
+          anchor="configure_startup">
+    Update <literal>/etc/conf.d/apache2</literal> by adding the following
+    to the <literal>APACHE2_OPTS</literal> parameter:
+    <code>
+-D SVN -D SVN_AUTHZ -D DAV -D DAV_FS -D SSL -D SSL_DEFAULT_VHOST
+    </code>
+    Mine looks like this for example:
+    <code>
+APACHE2_OPTS="-D PYTHON -D SSL -D SVN -D SVN_AUTHZ -D DAV -D DAV_FS"
+    </code>
+  </action>
+    
+  <action title="Create an Apache password file" anchor="svnusers">
+    When users access Subversion using WEBDAV, authentication is
+    actually handled by Apache.  For this to work Apache needs a file
+    to check passwords against.  <italics>It's obviously important
+    that this file only be writable by root.</italics>.
+    
+    <code>
+<cmt># Use -c to create the file while adding the first user</cmt>
+root# htpasswd2 -c /var/svn/conf/svnusers foouser
+
+<cmt># Add another user, rinse and repeat</cmt>
+root# htpasswd2 /var/svn/conf/svnusers baruser
+    </code>
+  </action>
+    
+  <action title="Create an SVN policy file" anchor="svnpolicy">
+    The support for policies is awesome.  It allows you to say that
+    foo user has read/write on this and that, while bar only has write
+    on this.
+    <code>
+root# nano -w /var/svn/conf/svnpolicy
+
+[your-project:/]
+* = r
+
+[another-project:/]
+foouser = rw
+baruser = r
+
+[yet-another:/trunk/protected]
+foouser = rw
+    </code>
+    <tip>
+      Subversion support for slick policies like this is only available
+      when using the <lt>http://</lt> (or https) protocol.
+    </tip>
+  </action>
+    
+  <action title="Configure Apache to support serving up svn"
+          anchor="add_support_to_apache">
+    First make a backup, and then make
+    <literal>/etc/apache2/modules.d/47_mod_dav_svn.conf</literal>
+    look like this:
+    <code>
+&#60;IfDefine SVN&#62;
+        &#60;IfModule !mod_dav_svn.c&#62;
+                LoadModule dav_svn_module       modules/mod_dav_svn.so
+        &#60;/IfModule&#62;
+        &#60;Location /svn/repos&#62;
+                DAV svn
+                SVNParentPath /var/svn/repos
+                #SSLRequireSSL
+                AuthType Basic
+                AuthName "Super Duper SVN Repository"
+                AuthUserFile /var/svn/conf/svnusers
+                AuthzSVNAccessFile /var/svn/conf/svnpolicy
+                &#60;LimitExcept GET PROPFIND OPTIONS REPORT&#62;
+                        Require valid-user
+                &#60;/LimitExcept>
+                SVNIndexXSLT /svnindex.xsl
+        &#60;/Location&#62;
+        &#60;IfDefine SVN_AUTHZ&#62;
+                &#60;IfModule !mod_authz_svn.c&#62;
+                        LoadModule authz_svn_module     modules/mod_authz_svn.so
+                &#60;/IfModule&#62;
+        &#60;/IfDefine&#62;
+&#60;/IfDefine>
+    </code>
+  </action>
+    
+  <action title="Place the default Subversion xsl and css files"
+          anchor="eyecandy">
+    You do want to make Subversion look pretty... don't you?
+    <code>
+root# cp /usr/share/doc/subversion-1.5.1/svnindex.* /var/www/localhost/htdocs/
+root# cd /var/www/localhost/htdocs
+root# gunzip svnindex.css.gz 
+root# gunzip svnindex.xsl.gz
+    </code>
+  </action>
+    
+  <action title="Restart Apache" anchor="restart_apache">
+    Let's give our initial setup a try:
+    <code>root# /etc/init.d/apache2 restart</code>
+    Now you should be able to browse to your project by hitting:
+    <pbreak/>
+    http://your-server/svn/repos/<emphasis>your-project</emphasis>/trunk/
+    <pbreak/>
+  </action>
+        
+  <action title="Gentoo ebuild notes" anchor="ebuild_notes">
+    <code>
+ * Subversion Server Notes
+ * -----------------------
+ * 
+ * If you intend to run a server, a repository needs to be created using
+ * svnadmin (see man svnadmin) or the following command to create it in
+ * /var/svn:
+ * 
+ *     ebuild /path/to/ebuild/subversion-1.5.1.ebuild config
+ * 
+ * If you upgraded from an older version of berkely db and experience
+ * problems with your repository then run the following commands as root:
+ *     db4_recover -h /var/svn/repos
+ *     chown -Rf apache:apache /var/svn/repos
+ * 
+ * Subversion has multiple server types, take your pick:
+ * 
+ *  - svnserve daemon: 
+ *    1. edit /etc/conf.d/svnserve
+ *    2. start daemon: /etc/init.d/svnserve start
+ *    3. make persistent: rc-update add svnserve default
+ * 
+ *  - svnserve via xinetd:
+ *    1. edit /etc/xinetd.d/svnserve (remove disable line)
+ *    2. restart xinetd.d: /etc/init.d/xinetd restart
+ * 
+ *  - svn over ssh:
+ *    1. Fix the repository permissions:
+ *         groupadd svnusers
+ *         chown -R root:svnusers /var/svn/repos/
+ *         chmod -R g-w /var/svn/repos
+ *         chmod -R g+rw /var/svn/repos/db
+ *         chmod -R g+rw /var/svn/repos/locks
+ *    2. create an svnserve wrapper in /usr/local/bin to set the umask you
+ *       want, for example:
+ *          #!/bin/bash
+ *          umask 002
+ *          exec /usr/bin/svnserve "$@"
+ * 
+    </code>
+  </action>
+
+  <action title="TIP: howto create a tag" anchor="tip_create_tag">
+    If you don't have a tags directory inside of your repository
+    you first need to make one:
+    <code>
+user# svn mkdir http://your-server.com/svn/repos/your-project/tags -m "Initial creation"
+    </code>
+
+    Here's how you then populate the tag, or copy the data from the
+    trunk into the tag directory (notice you create the specific tag
+    <literal>0.1.0</literal> and populate it in the same step):        
+    <code>
+user# svn cp \
+> http://your-server.com/svn/repos/your-project/trunk \
+> http://your-server.com/svn/repos/your-project/tags/0.1.0 \
+> -m "Initial release, doesn't do much of anything really"
+      </code>
+  </action>
+
+  <!--
+  <action title="" anchor="">
+    <code></code>
+  </action>
+  -->    
+</guide>

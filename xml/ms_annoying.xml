@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="09/27/2005">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Microsoft - their software can be annoying sometimes">
+        This document will show how to explain to someone that Microsoft
+	has some annoying stuff goin on.
+    </abstract> 
+    <convention>This document assumes you prolly have an unhealthy degree of bias already</convention>
+    <convention>So maybe my spelling/grammar isn't the best</convention>
+    <change date="09/27/2005 @12:16">Initial creation</change>
+            
+    <action title="File name limitations" anchor="file_name_limitations">
+    	The current NTFS filesystem has some messed up file name limitations. For example,
+	on Windows XP examine the following:
+	<code>
+Valid file name:      ;.]-=(fo'$%@~)^o&amp;   fr.txt
+Invalid file name:    .svn
+	</code>
+	What kind of sense does that make?
+    </action>
+    
+    <action title="Default image type during cut and paste" anchor="bmp">
+        Ever hit "print screen" and pasted into word? Yea, you get an awesome
+	bitmap. Nothing funner than getting screenshots from users (each of which
+	is 1.2m) in bitmap format filling up your inbox.
+    </action>
+
+    <action title="File renaming includes the file extension" anchor="f2">
+        Have you ever hit F2, or right clicked "rename" and noticed that
+	you have to select the name of the file with your mouse or keyboard
+	before you can change it... else you need to type the extension again?
+	I guess this one's prolly unreasonable, but I find it annoying.
+    </action>
+    
+    <action title="Deleting an empty directory can take forever" anchor="rm">
+        I've had times when it takes 30 seconds to delete an empty directory.
+	A person could argue that my machine was unhealthy at the time, but geezle.
+    </action>
+
+    <action title="The default windows XP Start Menu" anchor="start_menu">
+        Enough said.
+    </action>
+
+    <action title="Defragmentation, still?" anchor="defrag">
+        NTFS still requires manual defrag?
+    </action>
+
+    <action title="Command line interface" anchor="dos">
+        I know most would completely disagree with me here, but try to get
+	alot of work done during an emergency over dialup (if that's all you've
+	got) using the current cli. Word has it Vista might have something much
+	improved.
+    </action>
+
+    <action title="Cannot write to file because it's being used by some process" anchor="lsof">
+        It would be nice to have something to tell you what process is
+	using the file.  Maybe <literal>lsof</literal> for Windows?
+	I'm sure something's out there but I haven't seen it yet.
+    </action>
+
+    <action title="Back in the day I paid $1,000 for W2k server" anchor="w2kserver">
+        I was having an install problems, so I called for support. The call was going to
+	be $250 just to get someone on the line, and I just got back from the store spending
+	1k?  That was annoying.
+    </action>
+
+    <action title="Hardware support (standard stuff, like nics)" anchor="hardware_support">
+        A while ago I installed W2k3 Standard Server on an HP D530 (P4, year old maybe)
+	and I could't get the network card to work:
+	<literal>
+	Broadcom NetXtreme Gigabit Ethernet for HP
+	</literal>
+	I'm sure I was doing something wrong, but it suddenly started working after I
+	installed drivers from the manufacturer.  That's annoying to not have such
+	a typical driver. What makes it even worse, I didn't have a cdrw or a floppy
+	in the computer. Yes, I used a freeking USB floppy to get the driver on the
+	computer. Just for kicks, I popped in a Knoppix disk and was surfing the net
+	after one keystroke (enter). I know Windows has awesome support for the latest
+	webcam or USB game or whatever, but this was W2k3 server, I just wanted the NIC
+	work.
+    </action>
+
+    <action title="Visual Source Safe" anchor="vss">
+        Come one, no way it's still this bad.
+    </action>
+
+    <action title="System recovery" anchor="recovery">
+        I on several occasions have either had my machine fail to boot, or I've
+	observed someone else in the same situation. What are you supposed to do
+	if it won't boot? In fact, I think it was my W2k Server that I paid 1k
+	for that wouldn't boot.
+	<br/><br/>
+	PS: The recovery console is not a valid solution
+    </action>
+
+    <action title="File system searching stinks" anchor="searching">
+        There's not really a good way to search for files that have "bla"
+	in the filename, and also contain the contents "wooo".
+    </action>
+
+    <action title="Task manager is not responding" anchor="task_manager">
+        When you can't kill an application or process, please don't tell me
+	the only resort is to reboot. Actually, there's a neat little program
+	called kill.exe that works much of the time. Please include it by default,
+	and provide something else when it also isn't able to stop something. It
+	is really annoying to loose work you've done in autocad or somethign, because
+	IE locked up.
+    </action>
+
+    <action title="Antivirus software slowing things down too much" anchor="antivirus">
+        It's really frustrating when you are in the middle of composing an email or
+	word processing document right when Mcafee/Norton start to scan things.
+	Suddenly it takes 25 seconds for each keystroke to render on the screen. Why
+	does it seem like I never suffer from that with my non work computers? Ah, I
+	know why.
+    </action>
+    
+    <action title="No one likes all the security patches" anchor="patches">
+        MS computers usually need to be patched and rebooted monthly to stay secure.
+	There are plenty of other operating systems out there that seem to avoid this.
+	Thru obscurity you retort?  Maybe, but it's still annoying.
+    </action>
+
+    <action title="Microsoft SQL Server" anchor="mssql">
+        Don't get me wrong... it's a great product. I've developed on it for a long time
+	now. But can we please, please stop calling it: "sequel"
+	<br/><br/>
+	It should be wrong somehow for Microsoft to brand their product off of a language.
+	I know, I'm gunna release my next application and name it:
+	<literal>C#</literal>, or <literal>TCP/IP</literal>
+	<br/><br/>
+	It's cool to say that your product <literal>is a SQL server</literal>, but it's
+	not cool to say <literal>it's SQL</literal>. SQL is a language, not a database engine!
+    </action>
+
+    <action title="MSDN search is poopy" anchor="msdn">
+        As dominant as Microsoft is, and as much as you pay for their products
+	I would like to think their web based support was better. Try searching
+	for "xsl find last element in node" on:
+	<list>
+	    <element>
+	        <link uri="http://search.microsoft.com/us/dev/" target="_blank">
+	            search.microsoft.com/us/dev/
+		</link>
+	    </element>
+	    <element>
+	        <link uri="http://google.com" target="_blank">
+		    google.com
+		</link>
+	    </element>
+	</list>
+	and compare the results. Which one does a better job of pointing you towards
+	an example of how to print the last element of an XML node using XSL? I guess
+	it's not fair to compare Google and Microsoft, it's just annoying how hard it
+	can be to find support on Microsoft's site (remembering I paid them for it)
+    </action>
+
+    <action title="Dotnet typing" anchor="typing">
+        Sure being strongly typed is good, and sure loose typing can be nice... but this
+		is just wrong(vb.net): 
+		<code>
+Dim a As String
+If a = "" and a Is Nothing Then
+    Response.Write("wtf?")
+End If
+		</code>
+    </action>
+
+	<action title="Filesystem searching" anchor="nogrep">
+		One day I was getting a dotnet exception where "something" was looking
+		for a particular version of a DLL that I don't have.  I needed to determine
+		what DLL was the culprit.  My first instinct was to search thru the 
+		vb.net project files to see which one had a reference to the offending
+		DLL.  I'll walk you thru it:
+		<list>
+			<element>
+				Search for *.vbproj from the root of C
+			</element>
+			<element>
+				Wait for it to pull back the results
+			</element>
+			<element>
+				Copy the search results to another directory for full
+				text searching
+			</element>
+			<element>
+				Receive: "Cannot copy file: Cannot read from the source
+				file or disk"
+			</element>
+			<element>
+				Search again, this time also specifying the "word or
+				phrase" as part of the search criteria
+			</element>
+			<element>
+				Note start time: 10:32:48
+			</element>
+			<element>
+				Get some coffee...
+			</element>
+			<element>
+				Results come back: 10:34:59
+			</element>
+			<element>
+				Wonder if: "Search is complete. There are no results to
+				display" is accurate or not
+			</element>
+			<element>
+				Send a particular .vbproj file to notepad to pull out
+				text that's assuredly there...
+			</element>
+			<element>
+				Search again, this time knowing that > 0 results should be found
+			</element>
+			<element>
+				Note start time: 10:37:01
+			</element>
+			<element>
+				Results come back: 10:38:10
+			</element>
+			<element>
+				Wonder if: "Search is complete. There are no results to
+				display" is accurate or not
+			</element>
+			<element>
+				Do search again, using the exact file name as the target
+				of the search, and also use the version [1.1.5000.27677]
+				as the "word or phrase" (which I know is in the file)
+			</element>
+			<element>
+				Wonder if: "Search is complete. There are no results to
+				display" is accurate or not
+			</element>
+			<element>
+				Start to get really frustrated
+			</element>
+			<element>
+				Try to brainstorm on how to get access to grep, as Cygwin
+				isn't installed, and I'm not allowed to install it
+			</element>
+			<element>
+				Search for *.vbproj again. Then try to copy results
+				[excluding shortcuts] to another folder
+			</element>
+			<element>
+				Receive: "Cannot copy file: Cannot read from the source
+				file or disk"
+			</element>
+			<element>
+				Wonder if Visual Studio 2005 somwhow has a lock on one of the
+				project files I'm trying to copy
+			</element>
+			<element>
+				Close VS2005 (takes about 2 minutes to close)
+			</element>
+			<element>
+				Realize the copy problem is being caused by the search
+				results containing many references to .vbproj files by
+				the same name. You may wonder how this can happen? Try
+				"branching" with Microsoft's Team Foundation Server -
+				each branch must have it's own directory to hold the
+				working copy. You can't just "switch" to another branch
+				using a single working copy.
+			</element>
+			<element>
+				Starting to run out of ideas...
+			</element>
+			<element>
+				Give up, mount the filesystem via another computer and
+				immediately find what I was looking for:
+				<code>
+# find //host/d\$/projects/ -name *.vbproj -exec grep "1.0.5000.26660: {} \;
+				</code>
+				You might notice that I used Cygwin, not a Linux box. I
+				did this only as an excercise to get to the data I
+				needed using only Windows. In fact I had to reboot from
+				the Gentoo partition of my laptop to the win32 partition
+				simply to get what I needed using <i>only</i> Windows.
+			</element>
+			<element>*sigh*</element>
+			
+		</list>
+	</action>
+	
+    <!-- 
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->
+        
+</guide>

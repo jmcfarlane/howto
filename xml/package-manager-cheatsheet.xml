@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="08/08/2008">
+  <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+  <abstract title="Package manager - cheat sheet">
+    The goal of this howto is to document how you do common things in
+    each of the following package managers or os specific tools:
+    <list>
+      <element>Gentoo - portage</element>
+      <element>Debian/Ubuntu - apt</element>
+      <element>Redhat-4.x - rpm</element>
+      <element>Redhat-5.x, CentOS-5.x - yum</element>
+    </list>
+  </abstract> 
+
+  <convention>For the record I think RPM is a piece of poo</convention>
+  <convention>For the record I think Yum is not really much better</convention>
+  <convention>For the record I will not be documenting up2date</convention>
+
+  <change date="08/08/2008 @ 02:20">Initial creation</change>
+  <change date="08/14/2008 @ 00:20">Equery belongs</change>
+            
+  <action title="Check the version of an installed package" anchor="list">
+    Frequently you need to look up what version of Apache or something
+    you are currently running:
+    <table>
+      <header>
+        <col>Gentoo</col>
+        <col>Debian/Ubuntu</col>
+        <col>Redhat</col>
+        <col>Centos</col>
+      </header>
+      <row>
+        <col><code box="false">equery list apache</code></col>
+        <col><code box="false">dpkg --list httpd</code></col>
+        <col><code box="false">rpm -qa httpd</code></col>
+        <col><code box="false">yum list installed | grep httpd</code></col>
+      </row>
+    </table>
+  </action>
+        
+  <action title="Check to see what updates are available" anchor="updates">
+    It's usually wise to look at package updates before applying them.
+    This can really safe time because you can then plan around package
+    updates that require more regression testing and configuration
+    changes.
+    <table>
+      <header>
+        <col>Gentoo</col>
+        <col>Debian/Ubuntu</col>
+        <col>Redhat</col>
+        <col>Centos</col>
+      </header>
+      <row>
+        <col><code box="false">emerge -uDp world</code></col>
+        <col><code box="false">apt-get --dry-run upgrade</code></col>
+        <col><code box="false"><em>-NA-</em></code></col>
+        <col><code box="false">yum list updates</code></col>
+      </row>
+    </table>
+  </action>
+        
+  <action title="Manage the default runlevel" anchor="runlevel">
+    Servers are best configured with only the required services
+    running.  Here's [one way] to turn them on/off.
+    <table>
+      <header>
+        <col>Gentoo</col>
+        <col>Debian/Ubuntu</col>
+        <col>Redhat</col>
+        <col>Centos</col>
+      </header>
+      <row>
+        <col><code box="false">
+          etc-update add apache2 default<br/>
+          etc-update del apache2 default<br/>
+        </code></col>
+        <col><code box="false">
+          update-rc.d httpd defaults<br/>
+          update-rc.d -f httpd remove<br/>
+        </code></col>
+        <col><code box="false">
+          chkconfig httpd on<br/>
+          chkconfig httpd off<br/>
+        </code></col>
+        <col><code box="false">
+          chkconfig httpd on<br/>
+          chkconfig httpd off<br/>
+        </code></col>
+      </row>
+    </table>
+  </action>
+
+  <action title="Check what package a particular file belongs to"
+          anchor="belongs">
+    Frequently I need to know what package a particular file belongs
+    to, or what package put it there.
+    <table>
+      <header>
+        <col>Gentoo</col>
+        <col>Debian/Ubuntu</col>
+        <col>Redhat</col>
+        <col>Centos</col>
+      </header>
+      <row>
+        <col><code box="false">equery belongs /etc/services</code></col>
+        <col><code box="false">dpkg -S /etc/services</code></col>
+        <col><code box="false">rpm -qf /etc/services</code></col>
+        <col><code box="false">yum provides /etc/services</code></col>
+      </row>
+    </table>
+  </action>
+</guide>

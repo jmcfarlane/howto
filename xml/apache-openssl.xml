@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="07/05/2007">
+    <author email="jaisen@jmathai.com">Jaisen Mathai</author>
+    <abstract title="Apache2 - Configure SSL">
+        This document covers generating ssl certificate key using OpenSSL and set up apache2.
+        <br/><br/>
+        <link uri="https://certificates.godaddy.com/CSRApache2.go">This document follows docs from GoDaddy.</link>
+    </abstract> 
+    <convention>Though this howto is Gentoo specific, it will work on most
+        distros
+    </convention>
+   
+    <action title="Generate key file" anchor="key">
+        First we need to generate the key file using openssl.
+        <code>
+<cmt># ssl certificates are domain specific</cmt>
+<cmt># if you create an ssl certificate for yourdomain.com it will not work for www.yourdomain.com</cmt>
+<cmt># you can purchase and genrate wildcard certificates which this tutorial does not cover</cmt>
+
+<cmt># cd to your root directory and generate the files there</cmt>
+root# cd /root
+root# openssl genrsa -des3 -out www.yourdomain.com.key 1024
+Enter pass phrase for www.yourdomain.com.key: <cmt># this is required but we will remove it later</cmt>
+Verifying - Enter pass phrase for www.yourdomain.com.key: <cmt># re-type your passphrase</cmt>
+
+<cmt># we will want to remove the passhrase else apache will need it every time it's started or restarted</cmt>
+root# openssl rsa -in www.yourdomain.com.key -out www.yourdomain.com.key
+        </code>
+      </action>
+      
+      <action title="Generate csr file" anchor="csr">
+      Now we'll generate our csr file using the key file from above
+      <code>
+root#  openssl req -new -key www.yourdomain.com.key -out www.yourdomain.com.csr
+<cmt># You'll be asked a series of questions...answer these carefully</cmt>
+Enter pass phrase for www.yourdomain.com.key: <cmt># enter your passphrase from above</cmt>
+Country Name (2 letter code) [AU]:
+State or Province Name (full name) [Some-State]:
+Locality Name (eg, city) []:
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:
+Organizational Unit Name (eg, section) []:
+Common Name (eg, YOUR name) []: <cmt># this should be www.yourdomain.com or whatever you are using this ssl certificate for</cmt>
+Email Address []:
+<cmt># these are optional</cmt>
+A challenge password []: <cmt># You can leave this blank.  If you do not then make sure you write it down</cmt>
+An optional company name []:
+
+<cmt># check and make sure the csr was generated</cmt>
+root# less www.yourdomain.com.csr
+<cmt>
+# your csr should look something like this
+-----BEGIN NEW CERTIFICATE REQUEST-----
+MI****SAMPLE SAMPLE SAMPLE******BgNVBAYTAlVTMRAwDgYDVQQIEwdHZW9y
+DQ*********DO NOT TRY TO USE THIS CSR**********BVbml2ZXJzaXR5IG9
+aWExNTAzBgNVBAsTLFVuaXZlcnNpdHkgQ29tcHV0aW5nIGFuZCBOZXR3b3JraW5n
+IFNlcnZpY2VzMRYwFAYDVQQDEw13d3ctcy51Z2EuZWR1MIGdMA0GCSqGSIb3DQEB
+AQUAA4GLADCBhwKBgQDh3yRPs36ywGwDK3ZS3qaOoNraOFHkSNTsielHUMHxV1/G
+N1E43/bifEQJUvSw/nrkOQf3Ync8O/39lelUTJeP6QZkX9Hg1XtuSUov3ExzT53l
+vbctCMtmZONOY+ybEHl/mX0RdqXFnivLpXohr7dJ5A1qHfjww/SLW8J/7UXj1QIB
+A6AAMA0GCSqGSIb3DQEBBAUAA4GBAIEu35zoGmODCcwwNrTqZk3JQAjyONJxjjtd
+uQ+QLQcckO4aghBpcqsgLckW6Pa6mbjeUV1wffn2dtbKsmz7DnK2fwnyaBtxXMvi
+CC4o9uvW11i5TjdorfOdRI1lR0FrNAzf+3GQUl1S2a83wagvFjo12yUCukrxBgyU
+bXbmNuJpkdsjdkjfkdjfkdfjdkfjdkfjdkfj
+-----END NEW CERTIFICATE REQUEST-----
+</cmt>
+        </code>
+    </action>
+    
+    <action title="Submit csr to issuing company" anchor="submit">
+        You will need to submit the contents of your csr file to the company issuing your ssl certificate.  
+        They will then process it and you can then create your certificate.
+    </action>
+    
+    <action title="Installing your certificate" anchor="install">
+        <code>
+<cmt># copy your csr and key files to /etc/apache2/ssl and cd to that directory</cmt>
+root# cp www.yourdomain.com.* /etc/apache2/ssl/
+root# cd /etc/apache2/ssl
+
+<cmt># you can remove the files from /root at your discretion</cmt>
+
+<cmt># create your crt file and copy/paste what your the issuing company provided</cmt>
+root# nano www.yourdomain.com.crt
+
+<cmt># paste in the certificate from the issuing company
+# it should look something like this
+-----BEGIN CERTIFICATE-----
+MIIE9jCCA96gAwIBAgIDQA+ZMA0GCSqGSIb3DQEBBQUAMIHKMQswCQYDVQQGEwJV
+UzEQMA4GA1UECBMHQXJpem9uYTETMBEGA1UEBxMKU2NvdHRzZGFsZTEaMBgGA1UE
+ChMRR29EYWRkeS5jb20sIEluYy4xMzAxBgNVBAsTKmh0dHA6Ly9jZXJ0aWZpY2F0
+ZXMuZ29kYWRkeS5jb20vcmVwb3NpdG9yeTEwMC4GAawe4tEAxMnR28gRGFkZHkgU
+dXJlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MREwDwYDVQQFEwgwNzk2OTI4NzAe
+Fw0wNzA1MDcxNDQ3MDVaFw0wODA1MDcxNDQ3MDVaMFsxGjAYBgNVBAoTEXd3dy5m
+b3Rvc3RpY2suY29tMSEwHwYDVQQLExhEb21haW4gQ29udHJvbCBWYWxpZGF0ZWQx
+GjAYBgNVBAMTEXd3dy5mb3Rvc3RpY2suY29tMIGfyit0GCSqGSIb3DQEBAQUAA4G
+ADCBiQKBgQDPNty9crTmSwx6v7Uf7iegO1D2IllflQ6Y7pYHfIabbJ46pPeaYf/b
+GRFqKK9XpnFAiOQJE+CCDYVeQEjinACCqMB9HNhyniem9OuxriONxJr9/uLmuf6O
+gzyOWu7DVcYq4oGIDTRAOI2IiRxa2m2+j0gO7SMVjrqW5MYHz/JF7QIDAQABo4IB
+1TCCAdEwCQYDVR0TBAIwADALBgNVHQ8EBAMCBaAtjkHQYDVR0lBBYwFAYIKwYBBQ
+AwEGCCsGAQUFBwMCMFYGA1UdHwRPME0wS6BJoEeGRWh0dHA6Ly9jZXJ0aWZpY2F0
+ZXMuZ29kYWRkeS5jb20vcmVwb3NpdG9yeS9nb2RhZGR5ZXh0ZW5kZWRpc3N1aW5n
+LmNybDBSBgNVHSAESzBJMEcGC2CGSAGG/W0BBxcBMDgwNgYIKwYBBQUHAgEWKmh0
+dHA6Ly9jZXJ0aWZpY2F0ZXMuZ29kYWRkeS5jasdf0vcmVwb3NpdG9yeTB/BggrBg
+BQcBAQRzMHEwIwYIKwYBBQUHMAGGF2h0dHA6Ly9vY3NwLmdvZGFkZHkuY29tMEoG
+CCsGAQUFBzAChj5odHRwOi8vY2VydGlmaWNhdGVzLmdvZGFkZHkuY29tL3JlcG9z
+aXRvcnkvZ2RfaW50ZXJtZWRpYXRlLmNydDAdBgNVHQ4EFgQUBo1mD5WYgG5dILRU
+9FN1iapA47kwHwYDVR0jBBgwFoAU/axhMpNsRdbi7oVfmrrndplozOcwKwYDVR0R
+BCQwIoIRd3d3LmZvdG9zdGljay5jb22CasasdfZvdG9zdGljay5jb20wDQYJKoZI
+AQEFBQADggEBAKu2nk3hwXrMhUbVyG8PzvPriZALJJYEZXdD7nJExtL3tFjX42rn
+TOZPJqt3idqbYpV35yj7JZjhGISgRuL/229Yl7+oMdfatUxlfq432QTWElG/ILoY
+5ojH+e9iuXZTvgIt9WgH8rxFJpqx6Easas//71dsgenQO9w5QgGJjrVAqWr4Lmcx
+TQxGk0YTTsBLvp97rz9lxBtA3E7+yAiV+Cdn7MizRO+FCldtb62arj12kIAIzMyN
+h557e6bAK+ozfoz9TkO+ntSHGsKJyUvVunShGGqNkm2y5bGM8fq2JNUpJjBTZbng
+zil5HznN9jL+LDBNZxL9bDDsnjCQl5piHtU=
+-----END CERTIFICATE-----
+</cmt>
+
+<cmt># for godaddy certificates you will need to download and install an additional intermediate certificate</cmt>
+<cmt># you can get this from their <link uri="https://certificates.godaddy.com/Repository.go">repository</link></cmt>
+
+root# wget https://certificates.godaddy.com/repository/gd_intermediate_bundle.crt
+
+<cmt># Now you can configure apache</cmt>
+<cmt># You will need a new virtual host block and accepts requests on port 443</cmt>
+root# nano /etc/apache2/vhosts.d/www.yourdomain.com.conf
+<cmt>
+# add a new vhost block with the ssl directives
+&lt;Virtualhost *:443&gt;
+  # start any settings you need
+  # ...
+  # stop any settings you need
+  SSLEngine on
+  SSLCipherSuite ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL
+  
+  SSLCertificateFile /etc/apache2/ssl/www.yourdomain.com.crt
+  SSLCertificateKeyFile /etc/apache2/ssl/www.yourdomain.com.key
+  SSLCertificateChainFile /etc/apache2/ssl/gd_intermediate_bundle.crt <cmt># this is only needed for GoDaddy certificates</cmt>
+  
+  SetEnvIf User-Agent ".*MSIE.*" nokeepalive ssl-unclean-shutdown downgrade-1.0 force-response-1.0
+&lt;/Virtualhost&gt;
+</cmt>
+        </code>
+      </action>
+      
+      <action title="Check configuration and restart apache" anchor="check">
+      Now that you're all finished you will want to test your configuration and restart apache
+      <code>
+# test the configuration first!!
+root# /etc/init.d/apache2 configtest
+
+# if the configuration is ok then restart apache
+root# /etc/init.d/apache2 restart
+      </code>
+      </action>
+      
+      <action title="Validate that everything is working" anchor="validate">
+      You can validate that everything is working by going to https://www.yourdomain.com/.  
+      If the site seems like it is hanging then check the logs.  
+      If there is nothing in the logs then you might need to increase the entropy.
+      <code>
+<cmt># something like this should give you enough entropy</cmt>
+root# emerge --sync
+      </code>
+      You can look into using an entropy deamon if needed.
+      </action>
+</guide>

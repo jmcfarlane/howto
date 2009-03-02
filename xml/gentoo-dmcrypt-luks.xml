@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="04/08/2007">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Gentoo encryption with dm-crypt and luks">
+        <em><b>This document is not finished!</b></em><br/><br/>
+        
+        This howto describes how to install and use dm-crypt and luks to
+        encrypt either a mounted file, or a mounted partition.  This
+        encryption is very secure, supports multiple passphrases, and before
+        long will be portable to win32 via TrueCrypt.  This howto does not
+        explain how to encrypt your entire operating system using dm-crypt and
+        luks, for that see
+        <link
+        uri="http://gentoo-wiki.com/SECURITY_System_Encryption_DM-Crypt_with_LUKS">
+            here</link>.
+    </abstract> 
+    <convention>Though this howto is Gentoo specific, it will work on most
+        distros
+    </convention>
+   
+    <action title="Background" anchor="background">
+        There are various types of encryption.  Some types are used to secure
+        sensitive information like credit card numbers on websites.  Other
+        types are used to secure private files or ensure you know who a file
+        was created by.
+    </action>
+
+    <action title="Prepare your kernel" anchor="kernel">
+        Here are the things you need in your kernel:
+        <code>
+Device Drivers  ---&#62;
+  Block devices  ---&#62;
+    &#60;*&#62; Loopback device support
+    &#60;*&#62;    Cryptoloop Support
+  Multi-device support (RAID and LVM)  --->
+    &#60;M&#62;   Device mapper support
+    &#60;M&#62;   Crypt target support
+Cryptographic options  ---&#62;
+    &#60;M&#62;   SHA256 digest algorithm
+    &#60;M&#62;   AES cipher algorithms (i586)
+        </code>
+        
+        You also need to add a few modules to your system startup:
+        <code>
+root# cd /etc/modules.autoload.d
+root# echo aes &#62;&#62; kernel-2.6
+root# echo dm_mod &#62;&#62; kernel-2.6
+root# echo dm_crypt &#62;&#62; kernel-2.6
+root# modules-update
+        </code>
+    </action>
+
+    <action title="Install required packages" anchor="dependancies">
+        First off you need to install the software required.
+
+        <code>
+root# emerge -a cryptsetup-luks
+        </code>
+    </action>
+
+    <action title="Prepare something for encryption" anchor="prepare_device">
+        You have two choices on what you want to encrypt.  Choose one of the
+        following (where <lt>VOLNAME</lt> is a name of your choosing):
+        <list>
+            <element>
+                File based encryption:
+                <code>
+user# dd if=/dev/urandom of=testfile.dm bs=10M count=10  <cmt>#100M</cmt>
+root# losetup /dev/loop/0 testfile.dm
+
+root# cryptsetup -y -s 256 luksFormat /dev/loop/0
+<cmt># It will ask for a passphrase, enter something [strong] you will remember</cmt>
+root# cryptsetup luksOpen /dev/loop/0 VOLNAME
+                </code>
+            </element>
+            <element>
+                Partition based encryption.  For the next few commands replace
+                <lt>sda77</lt> with a partition you want to encrypt:
+                <code>
+root# cryptsetup -y -s 256 luksFormat /dev/sda77
+<cmt># It will ask for a passphrase, enter something [strong] you will remember</cmt>
+root# cryptsetup luksOpen /dev/sda77 VOLNAME
+                </code>
+            </element>
+        </list>
+            Now we need to create a filesystem on the encrypted device we just
+            opened:
+            <code>
+root# mke2fs -j -O dir_index /dev/mapper/VOLNAME  <cmt>#Assuming you want ext3</cmt>
+            </code>
+    </action>
+
+    <action title="Mount and use the encrypted volume" anchor="initial_mount">
+        Now it's time to mount your encrypted volume:
+        <code>
+user# mount /dev/mapper/VOLNAME /home/foo/bar
+        </code>
+        At this point you can write files, make directories... do anything
+        you would normally to inside a directory.  The only difference is
+        that it's encrypted. <i>*feel the love*</i>
+    </action>
+
+    <action title="Unmount and close the volume" anchor="initial_umount">
+        To properly unmount the device you must both umount it, and close it:
+        <code>
+<cmt># First make sure no users are accesing the encrypted volume</cmt>
+root# umount /home/foo/bar  <cmt># Use the lazy switch if needed</cmt>
+root# cryptsetup luksClose /dev/mapper/VOLNAME
+        </code>
+    </action>
+    
+    <action title="Complete usage for FOO encrypted device" anchor="summary">
+        Here are all the commands you need once you have an existing
+        device (<i>weather file or partition</i>) that's setup for encryption:
+        <code>
+root# cryptsetup luksOpen /dev/FOO-DEVICE VOLNAME
+root# mount /dev/mapper/VOLNAME /SOME-MOUNT-POINT
+
+<cmt># do stuff...</cmt>
+
+root# umount /SOME-MOUNT-POINT
+root# cryptsetup luksClose /dev/mapper/VOLNAME
+        </code>
+    </action>
+
+    <action title="Permissions and how they work" anchor="perms">
+        All of the device setup, opening, and mounting needs to be done by
+        root.  But once mounted, all of the usual file system permissions
+        exist.  This means that if you create a directory owned by Kirby, the
+        ownership survives unmount and remounting.
+    </action>
+        
+</guide>

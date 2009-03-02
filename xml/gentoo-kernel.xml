@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="01/30/2004">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>/
+    <abstract title="Gentoo - kernel">
+        This document will go thru a step by step installation of the linux 2.6.17-gentoo-r7
+        kernel.
+    </abstract>
+    <convention>Please remember that I'm no kernel expert, and making even the slightest wrong step
+        in a kernel update can render your machine useless.
+    </convention>
+    <convention>Please always have a live-cd available
+        and know how to use it - just in case something goes wrong :/
+    </convention>
+    <change date="01/30/2004 @ 21:00">Initial creation</change>
+    <change date="11/03/2005 @ 18:30">Updates for the 2.6 kernel</change>
+    <change date="12/11/2005 @ 14:00">Updated to be Gentoo specific</change>
+    <change date="09/02/2006 @ 23:59">Updated for 2.6.17-gentoo-r7</change>
+    <change date="02/01/2007 @ 23:59">Switch from cp to cat for mtab</change>
+    
+    <action title="Download the Linux kernel sources" anchor="download">
+        To build the kernel you will need the actual kernel sources.
+        <code>
+root# emerge gentoo-sources
+        </code>
+    </action>
+    
+    <action title="Configure the new kernel" anchor="configure">
+    	Point /usr/src/linux to the correct kernel sources:
+        <code>
+root# cd /usr/src
+root# rm linux
+root# ln -s linux-2.6.17-gentoo-r7 linux
+        </code>
+        Now we want to pick which pieces of the kernel we want, and which parts we don't want.
+        The following command will open up a very simple but somewhat graphical interface that
+        lets you pick which elements you want to include/exclude from your kernel. You also
+        have the option to load some things as "Modules" that can loaded dynamically using insmod
+        or modprobe:
+        <code>
+root# cd /usr/src/linux
+root# make menuconfig
+        </code>
+        <tip>
+        	You can find most of the hardware information you'll need by using
+        	<literal>lspci</literal>.
+       	</tip>
+       	If you are using SCSI but aren't sure which modules you need here
+        are some commands that might help:
+       	<list>
+            <element>root# dmesg | grep SCSI</element>
+            <element>root# lsmod | grep SCSI</element>
+		</list>
+        Here are some of the features that you will need if your running
+        Gentoo like all the cool kids do. It's helpfull to remember that
+        options will be marked
+        <literal>(*)</literal> when they
+	are compiled directly into the kernel, and <literal>(M)</literal> when it's to be compiled
+	as a kernel module (and then loaded at a later time)
+	<code>
+Processor Type and Features -->
+    Processor Family -->
+        <cmt>*pick your processor, and hit the spacebar</cmt>
+Device Drivers -->
+    ATA/ATAPI/MFM/RLL support -->
+        [*] VIA82CXXX chipset support <cmt>#dmesg | grep IDE to see what you need</cmt>
+    SCSI device support -->
+        SCSI low-level drivers ->
+            <cmt>#Remove drivers you don't need</cmt>
+	    <cmt>#Compile directly in the drivers you need [NOT AS MODULES!]</cmt>
+    Networking device support -->
+        Ethernet (10 or 100Mbit) -->
+            <cmt>#Remove drivers you don't need</cmt>
+            <cmt>#Compile AS MODULES, the drivers you need</cmt>
+        Ethernet (1000Mbit) -->
+            <cmt>#Add drivers as needed AS MODULES</cmt>
+    Sound -->
+        Advanced Linux Sound Architecture -->
+	    <cmt>#Uncheck Advanced Linux Sound Architecture if you don't need sound</cmt>
+	    <cmt>#Add drivers AS MODULES if you need them</cmt>
+File systems -->
+    ( ) Deselect EXT3
+    (*) Reiserfs support
+        </code>
+        Once your finished making your selections you can close the menuconfig interface and it
+        will ask you to save the file. Go ahead and do this, saving the file under the name
+        /usr/src/linux/.config
+    </action>
+    
+    <action title="Compile the new kernel" anchor="compile">
+        Now it's time to actually compile the kernel
+        <code>
+root# make &#38;&#38; make modules_install
+        </code>
+    </action>
+    
+    <action title="Copy the newly compiled kernel to the boot partition" anchor="copy_to_boot">
+        In order to boot from your new kernel, it must be on the boot partition
+        <code>
+root# cp arch/i386/boot/bzImage /boot/kernel-2.6.17-gentoo-r7
+        </code>
+    </action>
+    
+    <action title="Copy the system map to the boot partition" anchor="system_map">
+        <code>
+root# cp System.map /boot/System.map-2.6.17-gentoo-r7
+        </code>
+    </action>
+    
+    <action title="Replace the old system map with the new one" anchor="system_map_update">
+        <code>
+root# cd /boot
+root# rm System.map
+root# ln -s System.map-2.6.17-gentoo-r7 System.map
+        </code>
+    </action>
+
+    <action title="Setup the bootloader (grub)" anchor="grub">
+    	<code>
+root# nano -w /boot/grub/grub.conf
+
+<cmt># Make file look like this:</cmt>
+default 0
+timeout 30
+title=Gentoo Linux 2.6.17
+root (hd0,0)
+kernel /kernel-2.6.17-gentoo-r7 root=/dev/hda3
+	</code>
+	</action>
+    
+    <action title="Create /etc/fstab which holds static information about the filesystem" anchor="fstab">
+        <code>
+root# nano -w /etc/fstab
+
+<cmt># Make file look like this:</cmt>
+/dev/hda1           /boot           ext2            defaults,noatime    1 2
+/dev/hda3           /               reiserfs        noatime,notail      0 1
+/dev/hda2           none            swap            sw                  0 0
+/dev/cdroms/cdrom0  /mnt/cdrom      auto            noauto,ro,user      0 0
+none                /proc           proc            defaults            0 0
+none                /dev/shm        tmpfs           defaults            0 0
+	</code>
+    </action>
+    
+    <action title="Finish up the bootloader" anchor="mbr">
+    	<code>
+root# cat /proc/mounts > /etc/mtab
+root# grub-install /dev/hda
+    	</code>
+        <tip>
+            If you have problems with grub hanging as it tries to probe devices, you
+            should know that grub-install gets all confused if you don't have a floppy.
+            If you find yourself in this situation, try:
+            <code>root# grub-install --recheck --no-floppy /dev/hda</code>
+        </tip>
+    </action>
+    
+    <action title="Resume Gentoo install if that's what you are doing" anchor="resume">
+        If you are currently following the Gentoo install howto, you can go back
+        resume by clicking <link uri="javascript:history.back()">here</link>.
+    </action>
+
+    <action title="Install utilities for alsa" anchor="alsa">
+        If your an alsa user (which is a good idea) you'll want to make sure you have the needed
+        alsa utilities
+        <code>
+user# sudo emerge -a alsa-utils alsa-driver
+        </code>
+    </action>
+    
+    <action title="Make sure modules.autoload.d is set up to your liking" anchor="modules">
+        After installing a new kernel of any version, it is important
+        that you have the appropriate /etc/modules.autoload.d/kernel-X.Y
+        created (X.Y is the first 2 parts of your new kernel version)
+        <p></p> 
+        For example, this kernel will require:<br />
+        /etc/modules.autoload.d/kernel-2.6
+    </action>
+    
+    <action title="Reboot" anchor="reboot">
+        If all goes well, your machine will startup with a shiney new 2.6 kernel. Enjoy!
+    </action>
+    
+    <!--
+    <action title="" anchor="">
+        
+        <code></code>
+    </action>
+    -->
+    
+</guide>

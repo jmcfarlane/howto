@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="12/10/2006">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Gentoo - Apache, PHP, Mysql">
+        This document outlines the installation of a web server running
+        Apache, PHP, and Mysql.
+    </abstract>
+    
+    <action title="Starting from a fresh Gentoo install" anchor="starting_from_a_fresh_gentoo_install">
+        The assumption is that you are starting from a fresh Gentoo install,
+        see <link uri="gentoo-install.xml">here</link>.
+    </action>
+    
+    <action title="Set the use flags in make.conf" anchor="set_the_use_flags_in_make_conf">
+        Set the USE flags in <literal>/etc/make.conf</literal> to look like this:
+        <code>
+USE="-alsa -arts -cups -gnome -gtk -ldap -mpeg -opengl -qt -X -xv \
+    apache2 curl dba exif expat gd imagemagick jpeg mysql pcre vhosts xml"
+        </code>
+    </action>
+    
+    <action title="Update package.keywords (temporary)" anchor="update_package_keywords">
+        As of 11/18/2005 in order to get eaccelerator to work with php-4-4 some
+        things need to be masked.  Because of this, these keywords can be
+        safely removed in time.  Create the file
+        <literal>/etc/portage/package.keywords</literal> with the following:
+        <code>
+dev-php5/eaccelerator ~x86
+media-libs/ming ~x86
+        </code>
+    </action>
+
+    <action title="Update package.use (temporarily)" anchor="update_package_use">
+        Create the file <literal>/etc/portage/package.use</literal>
+        with the following:
+    <code>
+dev-lang/php cli pear ming cgi simplexml
+    </code>    
+    </action>
+
+    <action title="Update package.unmask (temporary)" anchor="update_package_unmask">
+        As of 09/14/2006 in order to get ming 0.3   things need to be masked.  Because 
+        of this, these keywords can be safely removed in time.  Create the file
+        <literal>/etc/portage/package.unmask</literal> with the following:
+        <code>
+media-libs/ming
+        </code>
+    </action>
+
+
+    <action title="Install the base packages" anchor="install_the_base_packages">
+        <code>root# emerge -a dev-php5/eaccelerator PEAR-PEAR lighttpd imagemagick ffmpeg libwww-perl ruby</code>
+        Then update your config files:
+        <code>
+root# etc-update
+
+<cmt>#Install the php-json module</cmt>
+root# pecl install JSON
+
+<cmt>#Download latest version of flvtool2 (http://rubyforge.org/projects/flvtool2/)</cmt>
+root# tar -xvf flvtool2_xxx.tgz
+root# cd flvtool2_xxx
+root# ruby setup.rb config
+root# ruby setup.rb setup
+root# ruby setup.rb install
+    </code>
+    </action>
+    
+    <action title="Now that everything is installed backup configs" anchor="backup_configs">
+        <emphasis>Not mandatory, but recommended step</emphasis>
+        <code>root# cp -R /etc /.etc.stable.abc</code>
+    </action>
+
+    <action title="Set the services that need to start upon bootup" anchor="set_the_services_that_need_to_start_upon_bootup">
+        In Gentoo the bootup services are controlled by the contents of
+        /etc/runlevels/default. Go ahead and populate them (some might
+        already be there):
+    <code>
+root# rc-update add apache2 default
+root# rc-update add mysql default
+    </code>
+    </action>
+
+    <action title="Configure Mysql" anchor="configure_mysql">
+    Update <literal>my.cnf</literal>
+    <code>
+root# nano -w /etc/mysql/my.cnf
+
+<cmt>#Change the following</cmt>
+[mysqld]
+max_connections     = 250
+ft_min_word_len     = 2
+    </code>
+        Create a default database:
+        <code>root# /usr/bin/mysql_install_db</code>
+        
+        Get a copy of production:
+        <code>root# scp -r user@hostname.com:/path/to/backup /home/foobar/db</code>
+        
+        Extract the tarball files from <literal>/home/foobar/db</literal>
+        into <literal>/home/foobar/mysql</literal>
+        
+        <br/><br/>
+        Update the permissions of the files:
+        <code>
+root# cd /home/foobar/mysql
+root# chown -R mysql:mysql *
+root# chmod -R 660 *
+root# chmod 700 *
+        </code>
+        
+        Change directories and move the files to <literal>/var/lib/mysql</literal>:
+        
+        <code>
+root# cd /var/lib/mysql
+root# mv mysql mysql.original
+root# cp -rp /home/foobar/mysql/* /var/lib/mysql
+        </code>
+        
+        Start Mysql:
+        <code>root# /etc/init.d/mysql start     <cmt>#Login and verify stuff</cmt></code>
+    </action>
+    
+    <action title="Configure PHP" anchor="configure_php">
+        Edit php.ini
+        <code>
+root# nano -w /etc/php/apache2-php5/php.ini
+
+<cmt>#Change the following to:</cmt>
+short_open_tag = Off
+expose_php = Off
+post_max_size = 200M
+magic_quotes_gpc = Off
+include_path = "."
+allow_url_fopen = On
+session.save_path = /tmp
+upload_max_filesize = 200M
+register_long_arrays = Off
+register_argc_argv = Off
+date.timezone = US/Eastern
+
+root# nano -w /etc/php/cli-php5/php.ini
+<cmt>#Same as above except:</cmt>
+post_max_size = 8M
+file_uploads = Off
+upload_max_filesize = 2M
+
+root# nano -w /etc/php/cli-php5/php.ini
+
+<cmt>#Add support for php-json</cmt>
+extension=json.so
+        </code>
+        
+        Copy to /etc/php/cgi-php5/php.ini
+        <code>
+root# cp /etc/php/apache2-php5/php.ini /etc/php/cgi-php5/php.ini
+        </code>
+        
+        
+        Edit cli-php.ini
+        <code>
+root# nano -w /etc/php/cli-php5/php.ini
+
+<cmt>#Change the following to:</cmt>
+short_open_tag = Off
+magic_quotes_gpc = Off
+include_path = "."
+file_uploads = Off
+allow_url_fopen = On
+
+<cmt>#Add support for php-json</cmt>
+extension=json.so
+        </code>
+    </action>
+    
+    <action title="Configure Apache" anchor="configure_apache">
+        Create the vhost from prod's httpd.conf
+        <code>
+root# nano -w /etc/apache2/vhosts.d/ff.conf
+
+<cmt>#Paste in the relevent stuff</cmt>
+        </code>
+        
+        Update the actual Apache server settings to handle more load:
+        <code>
+root# nano -w /etc/apache2/httpd.conf
+
+<cmd>#Specify IP Addresses to listen on (differentiate from lighty which also listens on 80)</cmd>
+123.123.123.123:80
+124.124.124.124:80
+
+&#60;IfModule prefork.c&#62; 
+    StartServers        30 
+    MinSpareServers     10 
+    MaxSpareServers     20 
+    MaxClients          255 
+    MaxRequestsPerChild 10000 
+&#60;/IfModule&#62;
+        </code>
+        
+        Tell apache to use PHP upon startup
+        <code>
+root# nano -w /etc/conf.d/apache2
+
+<cmd>#Make the following change</cmd>
+
+APACHE2_OPTS="-D DEFAULT_VHOST -D SSL -D PHP5"
+        </code>
+        
+        Let'er rip
+        <code>root# /etc/init.d/apache2 start</code>
+    </action>
+    
+    <action title="Drop in php files" anchor="drop_in_php_files">
+        Create htdocs and related directories, place the files.
+        Specifically the files in cgi-bin need to be executable:
+        <code>
+user# cd /path/to/cgi-bin
+user# chmod 755 *
+        </code>
+    </action>
+    
+    <action title="Setup the mailhub so PHP can send mail" anchor="setup_the_mailhub_so_php_can_send_mail">
+        <code>
+root# nano -w /etc/ssmtp/ssmtp.conf
+
+<cmt>#Set the following</cmt>
+
+root=foo@bar.com
+mailhub=mail.smtp-provider.com
+rewriteDomain=hostname.com
+FromLineOverride=YES
+        </code>
+    </action>
+    
+    <action title="Restrict ssh access to only one user, and change the default port" anchor="restrict_ssh_access">
+        Add list of stuff to lock down here.
+    </action>
+
+    
+    <!--
+    <action title="">
+        <code></code>
+    </action>
+    -->    
+</guide>

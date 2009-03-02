@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="08/24/2004">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Openoffice.org - setup of default template">
+        This document will go step by step thru the process of setting up a default
+        template. This will allow all oo documents to start off with the fonts you
+        prefer to use.
+    </abstract> 
+    <convention>OpenOffice will be referred to as oo in this howto</convention>
+    <convention>This howto assumes you have a working copy of oo</convention>
+    <change date="08/24/2004 @21:00">Initial creation</change>
+
+    <action title="Open a new oo writer document" anchor="new_oo_doc">
+    	Open up oo writer, which will present you with a blank
+	document. If you do not know how to do this, you prolly need
+	to learn how to install and configure oo first. 
+    </action>
+    <action title="Change the appearance to your liking" anchor="style">
+        Next you need to use the stylist to begin working on your default
+        template.  Hit F11 on your keyboard to view the stylelist.
+        The stylelist is used to pick global styles per document.
+        <image uri="oo_stylist.png" /><br/>
+        
+        The default style used for any oo writer document is determined by
+        the "default" style.  In the stylelist look for the Default
+        Paragraph Style and right click on it.  Choose "Modify" and
+        select your preferred choices (this can include font, size,
+        color, ect.)
+    </action>
+
+    <action title="Save the template of the document that is now to your liking" anchor="save_template">
+        Next go to the oo File Menu and pick File::Templates::Save <p/>
+        You will be presented with a dialog where you can specify the
+        name of the template you want, hit "OK" when finished
+        <image uri="oo_template_save.png" /><br/>
+    </action>
+    
+    <action title="Tell oo to use this newly saved template for all new writer documents" anchor="use_template">
+    	Go to the oo File Menu and pick File::Templates::Organize <p/>
+	Double click on "Default" in the left pane, and then highlight
+	the template you named earler.  Then go to Commands::Set as
+	Default Template
+        <image uri="oo_template_organize.png" /><br/>
+    </action>
+    
+    <action title="Finish up and test" anchor="finish">
+        Now you can click "Close Template Organizer" and close the oo document.
+        All finished, open a fresh oo document and you'll find your preferences are now
+        the default  :)
+    </action>
+    
+    <!--
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->    
+</guide>

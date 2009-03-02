@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="05/10/2006">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Python - howto for VB6 developers">
+        This document is a quick introduction into Python programming
+        intended for those with a background in Microsoft Visual Basic
+        or Active Server Pages. (<italics>This howto is not even close
+        to complete, partly because I lost my will to go on, when trying
+        to write the VB examples.</italics>)
+    </abstract>
+    <convention>
+        Most examples in this howto will contain code snippets in both Python and
+        VB6
+    </convention>
+    <convention>
+        The Python examples in this howto have only been tested
+        against Python-2.4.2
+    </convention>
+    <!-- <change date="05/23/2006 @22:00">Added ???</change> -->
+    
+    <action title="Introduction to Python" anchor="introduction">
+        Python is an interpreted language started by Guido Van Rosen?.
+        It's often compared to languages such as Perl and Ruby.  It's a
+        very popular langauge often because it's easy to learn and fast to
+        develop with.  All the cool kids use Python. Python is known to
+        run on nearly everything:
+        <list>
+            <element>Windows</element>
+            <element>BSD</element>
+            <element>Macintosh</element>
+            <element>Linux</element>
+        </list>
+        Here are a few things that you need to know starting off:
+        <list>
+            <element>
+                Running sample code:
+                <code>
+<cmt>Windows</cmt>
+c:\> python foobar.py
+
+<cmt>Linux/Unix/BSD</cmt>
+user# python foobar.py
+                </code>
+                <code>c:\> foobar.exe</code>
+            </element>
+            <element>
+                Comments in code:
+                <code># This is a comment</code>
+                <code>' This is a comment</code>
+            </element>
+        </list>
+        
+        <link uri="http://docs.python.org/tut/">Here</link> is a link to the
+        official Python tutorial.
+    </action>
+
+    <action title="Variables" anchor="variables">
+        Python is a strongly typed lanuage at it's core, but it's easy to forget
+        because casting is implicit.
+        <code>
+a = 1               <cmt># Integer (>= 32 bit)</cmt>
+b = 1L              <cmt># Long (Unlimited precision)</cmt>
+c = 1.1             <cmt># Float (Precision determined by arch)</cmt>
+d = 2J              <cmt># Complex (Real and imaginary part)</cmt>
+e = "2"             <cmt># String</cmt>
+f = foobar(a, b)    <cmt># Class instance</cmt>
+        </code>
+        <code>
+Dim a As Integer
+a = 1                           <cmt># Integer (16 bits)</cmt>
+Dim b As Long
+b = 1.1                         <cmt># Long (32 bits)</cmt>
+Dim e As String
+e = "2"                         <cmt># String</cmt>
+Dim f As foobar
+Set f = CreateObject("Foo.bar") <cmt># Class instance</cmt>
+        </code>
+    </action>
+    
+    <action title="Operators" anchor="operators">
+        Python is a bit more like other languages such as Java/PHP:
+        <list>
+            <element><literal>=</literal> Assignment</element>
+            <element><literal>==</literal> Evaluation, equals</element>
+            <element><literal>!=</literal> Evaluation, does not equal</element>
+            <element><literal>+</literal> Addition of numbers, concatination of strings</element>
+            <element><literal>-</literal> Subtraction</element>
+            <element><literal>%</literal> Modulous</element>
+            <element><literal>+=</literal> Add number to self, concatinate string</element>
+            <element><literal>-=</literal> Subtract number to self</element>
+            <element><literal>is</literal> Evaluation, exact
+            <p/>
+                <link uri="http://docs.python.org/ref/operators.html">Here</link>
+                is a list every Python operator.
+            </element>
+        </list>
+        VB6 is more like dotnet:
+        <list>
+            <element><literal>=</literal> Assignment</element>
+            <element><literal>=</literal> Evaluation, equals</element>
+            <element><literal>&lt;&gt;</literal> Evaluation, does not equal</element>
+            <element><literal>+</literal> Addition of numbers, concatination of strings</element>
+            <element><literal>-</literal> Subtraction</element>
+            <element><literal>Mod</literal> Modulous</element>
+            <element><literal>i = i + 1</literal> Add number to self, concatinate string</element>
+            <element><literal>i = i - 1</literal> Subtract number to self</element>
+            <element><cmt>NA</cmt> Evaluation, exact</element>
+        </list>
+        
+        
+    </action>
+    
+    <action title="Conditional statements" anchor="conditionals">
+        Python and VB6 both lack real switch statements:
+        <code>
+<cmt># Simple</cmt>
+if a == 1:
+    print ""
+
+<cmt># Multiple conditions</cmt>
+if a == 1 and b == 2 or c == 3:
+    print ""
+elif b == 2:
+    print ""
+else:
+    print ""
+        </code>
+        <code>
+<cmt>' Simple</cmt>
+if a = 1 then
+    msgbox("")
+end if
+
+<cmt>' Multiple conditions</cmt>
+If a = 1 And b = 2 Or c = 3 Rhen
+    Msgbox("")
+Else if b = 2 Then
+    Msgbox("")
+Else
+    Msgbox("")
+End If        
+        </code>
+    </action>
+    
+    <action title="Looping statements" anchor="loops">
+        <code>
+<cmt># For loop</cmt>
+for i in xrange(5):
+    print i
+
+<cmt># While loop</cmt>
+i = 0
+while (i &lt;= 5):
+    print i
+    i += 1
+        </code>
+        <code>
+<cmt>' For loop</cmt>
+Dim i As Integer
+For i = 0 to 5
+    Msgbox(i)
+Next
+
+<cmt>' While loop</cmt>
+Dim i As Integer
+i = 0
+Do While i &lt;= 5 Do
+    Msgbox(i)
+    i = i + i
+Loop
+        </code>
+    </action>
+    
+    <action title="Strings" anchor="strings">
+        Python has four types of strings:
+        <list>
+            <element><b>Single and Double:</b>
+                There's no difference between single or double quoted strings
+                you can use the appropriate one based on the content of the
+                string to avoid having to escape characters.
+                <p/>
+                For example you could use <literal>"I'm happy"</literal> or
+                <literal>'The author "Big Daddy"'</literal> as appropriate.
+                <p/>
+            </element>
+            <element><b>Triple:</b>
+                Python also supports triple quoted strings in either single or
+                double quotes.  The difference is that they are considered
+                code documentation when placed at the top of a function or
+                class, and can span multiple lines.
+            </element>
+            <element><b>Raw:</b>
+                Raw strings are prefixed by <literal>r</literal> or
+                <literal>R</literal> and differ in that escape sequences are
+                not used.
+            </element>
+        </list>
+        <code>
+a = 'This is a simple string'
+b = "this is a simple string"
+c = "This is a string with two \t\t tabs"
+d = """This string
+       spans multiple lines"""
+e = r"This string does not contain any \t\t tabs"
+        </code>
+        You can find the official Python documentation on strings
+        <link uri="http://docs.python.org/ref/strings.html">here</link>.
+        <p/>
+        <emphasis>Note:</emphasis>
+            To my knowledge VB doesn't have anything other than double
+            quoted strings, which cannot span multiple lines or support escape
+            sequences like tabs/carriage returns ect.
+    </action>
+    
+    <action title="String manipulation" anchor="string_manipulation">
+        Python is extremely strong at string manipulation.  There's nothing VB
+        can do that Python can't do better.
+        <code>
+a = "abcdefg"
+
+<cmt># First character</cmt>
+print a[0]
+
+<cmt># First three characters</cmt>
+print a[0:3]
+
+<cmt># Last three characters</cmt>
+print a[-3:]
+
+<cmt># Middle three characters</cmt>
+print a[2:5]
+
+<cmt># Find the position of a string in another string</cmt>
+print a.find('d')
+
+<cmt># Everything to the left of the "d"</cmt>
+print a[0:a.find('d')]
+
+<cmt># Convert a string to upper, and lower case</cmt>
+print a.upper(), a.lower()
+
+<cmt># A string with the first letter of each word in caps</cmt>
+print "i love to eat apples".title()
+
+<cmt># String right justified by dashes</cmt>
+print "Angry baby".rjust(15, '-')
+
+<cmt># Last word in a sentence</cmt>
+print "I love apples".rsplit(' ', 1)[1]
+
+<cmt># Sentence printed in reverse</cmt>
+a = "I love avacados and apples".split()
+a.reverse()
+print ' '.join(a)
+
+<cmt># Return string without any trainling spaces</cmt>
+print "abcdefg     ".rstrip()
+
+<cmt># Replace a specific part of a string</cmt>
+print "I think apple's are the best fruit ever!".replace('apple', 'avacado')
+
+<cmt># Replace whole words in a sentence</cmt>
+import re
+print re.sub(r'\bby\b', ' BY ', "By the way, I walked by the bicycle shop today.")
+
+<cmt># Multiple string replacements (usually you make a function out of this)</cmt>
+r = {'avacados':'oranges', 'apples':'kiwi'}
+rc = re.compile('|'.join(map(re.escape, r)))
+def translate(match):
+    return r[match.group(0)]
+print rc.sub(translate, "I love avacados and apples")
+        </code>
+        
+        <link uri="http://docs.python.org/lib/string-methods.html">Here</link>
+        you can find the available Python string methods.
+    </action>
+    
+    <action title="Arrays" anchor="arrays">
+        Python has extensive support for arrays.  Python implements this via:
+        <list>
+            <element>Tuple - Immutable lists</element>
+            <element>List - Mutable lists</element>
+            <element>Dictionary - Key/value pairs</element>
+        </list>
+        For tuples are pretty much the same as lists, except their faster
+        and support a few less methods (because their immutable).  We'll
+        use lists and dictionaries for this howto as their both sweet.
+        
+        <code>
+<cmt># Create a new list with three elements</cmt>
+a = [1, 2, 6]
+
+<cmt># Add one more elements</cmt>
+a.append(3)
+
+<cmt># Add three more elements</cmt>
+a.extend([4, 9, 10])
+
+<cmt># Loop thru the list</cmt>
+for e in a:
+    print e
+
+<cmt># Sort the list and print again</cmt>
+a.sort()
+for e in a: print e
+
+<cmt># Reverse the sort and print again</cmt>
+a.reverse()
+for e in a: print e
+
+<cmt># Print the first and last elements</cmt>
+print a[0], a[-1]
+
+<cmt># Print and remove the last element in</cmt>
+print a.pop()
+
+<cmt># Print and remove the first element in</cmt>
+print a.pop(0)
+
+<cmt># Create a simple dictionary with two key/value pairs</cmt>
+a = {'color':'red', 'size':12}
+
+<cmt># Add another key/value pair</cmt>
+a['price'] = 125.99
+
+<cmt># Sort based on the keys</cmt>
+s = a.keys()
+s.sort()
+for key in s:
+    print a[key]
+
+<cmt># Sort based on the keys in reverse</cmt>
+s = a.keys()
+s.sort()
+s.reverse()
+for key in s: print a[key]
+
+<cmt># Because the items() method returns a tuple, we can also use an alternate style loop</cmt>
+for key, value in a.items():
+    print key, value
+
+<cmt># Sort based on the values in reverse</cmt>
+s = a.values()
+s.sort()
+s.reverse()
+for value in s: print value
+
+<cmt># Conditional statement based on presense/absense of key</cmt>
+a = {'color':'red', 'size':12}
+if 'red' == a.get('color'): print True
+if 10.00 >= a.get('price', 0.00): print 'greater than'
+        </code>
+        
+        Here can find the official Python documentation for
+        <link uri="http://docs.python.org/lib/typesmapping.html">
+            dictionaries</link>,
+        <link uri="http://docs.python.org/lib/typesseq-mutable.html">
+            lists</link>, and 
+        <link uri="http://docs.python.org/lib/typesseq-mutable.html">
+            tuples</link>.  You can also find tutorial style documentation
+        <link uri="http://docs.python.org/tut/node7.html">here</link>.
+    </action>
+    
+    <!--
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->    
+</guide>

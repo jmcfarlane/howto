@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="01/17/2004">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Python - matplotlib setup and usage">
+        This document will go thru a step by step installation of Matplotlib, and provide
+        a simple example of what it can do.
+    </abstract> 
+    <convention>This setup assumes the setup machine is Gentoo Linux</convention>
+    <change date="01/17/2004 @22:00">Initial creation</change>
+            
+    <action title="Software needed for Matplotlib:" anchor="dependancies">
+        <list>
+	    <element>Matplotlib-0.40 (main python wrapper)</element>
+	    <element>Pygtk-2.00 (gtk2 bindings for python)</element>
+	    <element>Numeric-2.31 (python support for processing numbers)</element>
+	    <element>Libgd-2.0.15 (main GD library)</element>
+	    <element>GDModule-0.51 (python wrapper for GD)</element>
+	    <element>TTFquery-0.2.6 (python package for finding the best True Type font match for your desired font)"</element>
+	    <element>Fonttools-2.0b1 (base library for handling TTF fonts -- required by TTF query)</element>
+        </list>
+	<code></code>
+    </action>
+    
+    <action title="Install everything" anchor="install">
+        <br />
+        Install/upgrade GD:
+        <code>
+user# sudo emerge sync
+--> this will upgrade your portage tree
+user# sudo emerge -p libgd
+--> remove the -p if the ebuild is either old or not installed
+        </code>
+        
+        Install/upgrade pygtk:
+        <code>
+user# sudo emerge -p pygtk
+--> remove the -p if the ebuild is either old or not installed
+        </code>
+        
+        Install/upgrade numeric:
+        <code>
+user# sudo emerge -p numeric
+--> remove the -p if the ebuild is either old or not installed
+        </code>
+        
+        Install matplotlib:
+        <code>
+user# cd /var/tmp
+user# wget http://unc.dl.sourceforge.net/sourceforge/matplotlib/matplotlib-0.40.tar.gz
+user# tar zxvf matplotlib-0.40.tar.gz
+user# cd matplotlib-0.40
+user# sudo python setup.py install        
+        </code>
+        
+        Install gdmodule:
+        <code>
+user# cd /var/tmp
+user# wget http://newcenturycomputers.net/projects/download.cgi/gdmodule-0.51.tar.gz
+user# tar zxvf gdmodule-0.51.tar.gz
+user# cd gdmodule-0.51
+user# sudo python Setup.py install        
+        </code>
+        
+        Install ttfquery:
+        <code>
+user# cd /var/tmp
+user# wget http://unc.dl.sourceforge.net/sourceforge/ttfquery/TTFQuery-0.2.6.tar.gz
+user# tar zxvf TTFQuery-0.2.6.tar.gz
+user# cd TTFQuery-0.2.6
+user# sudo python setup.py install        
+        </code>
+        
+        Install fonttools:
+        <code>
+user# cd /var/tmp
+user# wget http://unc.dl.sourceforge.net/sourceforge/fonttools/fonttools-2.0b1.tgz
+user# mv fonttools-2.0b1.tgz fonttools-2.0b1.tar.gz
+user# tar zxvf fonttools-2.0b1.tgz
+user# cd fonttools
+user# sudo python setup.py install
+        </code>
+    </action>
+    
+    <action title="Test your setup" anchor="test">
+        Create a file (~/simple-line.py) with the following content:
+        <code>
+#! /usr/bin/env python
+
+from matplotlib.matlab import *
+
+t = arange(0.0, 2.0, 0.01)
+s = sin(2*pi*t)
+plot(t, s)
+xlabel('time (s)')
+ylabel('voltage (mV)')
+title('About as simple as it gets, folks')
+
+savefig('simple_plot_small.png', dpi=60)
+savefig('simple_plot_large.png', dpi=120)
+
+show()
+        </code>
+        
+        Now from a shell do:
+        <code>
+user# python ~/simple-line.py
+        </code>
+        
+        If all goes well, you will see a window open (created by pygtk) that will display a simple
+        line graph. You will notice a small toolbar below the image that let's you do stuff, but
+        for the purposes of this tutorial we don't really care...) Once you close the window do
+        an ls and you will see two newly created files (simple_plot_small.png and simple_plot_large.png)
+        which were created by matplotlib *and GTK i think*.
+        <image uri="matplotlib_simple-line.png" />
+    </action>
+    
+    <action title="Test the setup for use with cron" anchor="test_cron">
+        Assuming you will want to use this engine to create graphs via cron, you will not want the
+        window to open up every time you call it displaying the image, as this wouild be a serious
+        problem if you're planning on creating hundreds of images every night. The solution is to
+        tell matplotlib to use the GD library to create the image rather than GTK. Here is the syntax
+        you will use:
+        <code>
+user# python ~/simple-line.py -dGD
+        </code>
+        If all goes well you will get a little data written to sdtout, but no window will open up and
+        you will still wind up with the two .png files- Very nice!
+        <p />
+        <link uri="http://matplotlib.sourceforge.net/screenshots.html">
+            Here is a link to some examples of what matplotlib can do
+        </link>
+    </action>
+    
+
+    <!-- 
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->
+        
+</guide>

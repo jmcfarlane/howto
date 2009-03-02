@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide>
+  <author email=""></author>
+  <abstract title="">
+  
+  </abstract> 
+  <convention></convention>
+  <change date="01/01/2000 @ 00:00"></change>
+            
+   
+  <action title="" anchor="">
+    <code></code>
+  </action>
+        
+</guide>

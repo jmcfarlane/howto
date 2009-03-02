@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="03/04/2004">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Gentoo - mssql, freetds, unixodbc, php setup">
+        This document will show step by step how to setup gentoo to be able to communicate
+        with a Microsoft Sql Server 2000 database server.
+    </abstract> 
+    <convention>In this howto <b>Microsoft Sql Server 2000</b> will be referred to as: <b>mssql</b></convention>
+    <convention>This howto will show examples using python, but will focus on PHP</convention>
+    <change date="03/04/2004 @14:00">Initial creation</change>
+    
+    <action title="Explain things a bit before we get started" anchor="preface">
+        Ok, because we all hate Microsoft with a passion, we're going to assume that you're a bit
+        pissed that you are even attempting to let your unix box communicate with mssql. That
+        being said, we want the process of communicating with it to be as easy as possible  :)
+    </action>
+    
+    <action title="Get ready for the necessary components" anchor="dependancies">
+        as of the writing of this document, the following packages work very nicely to allow gentoo
+        to speak with mssql:
+        <list element="Apache 2.0.48-r1" />
+        <list element="unixODBC 2.2.6" />
+        <list element="Freetds 0.61" />
+        <list element="PHP 4.3.4" />
+        <list element="Python 2.3.3" />
+        <list element="Adodb 4.20" />
+    </action>
+    
+    <action title="Understand how the pieces fit together" anchor="relationships">
+        Python or PHP are languages that we will use to query the database and manipulate the returned data.
+        Apache is the server that can "run" either of these two languages via the appropriate mod_foobar
+        package. unixODBC is an api that either of these languages will use to communicate with Freetds, the
+        piece that then talks to mssql for us. (adodb is a database abstraction layer for php that can make life
+        a bit slow, but really easy :)
+        <br /><br />
+        So, let's summarize:<br />
+        A user browses to a web page, apache tells php to tell adodb to tell unixODBC to tell Freetds to ask
+        mssql a question. Makes sense right?
+    </action>
+    
+    <action title="Tell portage that you want this stuff" anchor="portage">
+        Because of Gentoo and it's beautiful portage, getting this stuff installed is cake. Simply make sure
+        your /etc/make.conf has the following two use flags: <b>freetds odbc</b>
+        <br /><br />
+        Here is the USE flag portion of my make.conf file:
+        <code>
+USE="-X -gnome -kde -gtk -qt postgres gd png jpeg xml freetds odbc ssl"
+        </code>
+        Once you have these use flags, all you need is to do:
+        <code>
+root# emerge sync
+root# emerge -p apache mod_php
+root# emerge -v apache mod_php
+        </code>
+        The first command will update your portage tree, the second will show you what is about to happen,
+        the third will actually to the installation
+        <br /><br />
+        Because of your use flags, apache and mod_php will be installed, along with a whole slew of other neat
+        packages, most importantly PHP, unixODBC, and Freetds. But, we will have one serious problem that needs
+        to be addressed straight away.
+        <br /><br />
+        <b>This part is extremely important, or your setup will never work:</b>
+        <br />
+        As of this writing, the Freetds ebuild doesn't compile Freetds with all the stuff we need, and you will
+        thus wind up cursing because you can'd find /usr/lib/libtdsodbc.so which is needed later. The soluion
+        is to make sure your current ebuild has the following line: <b>econf --with-unixodbc</b>
+        <br /><br />
+        Here is the src_compile() function that I use:
+        <code>
+src_compile() {
+    econf --with-tdsver=7.0
+    econf --with-unixodbc
+    emake || die
+}
+        </code>
+        The inclusion of <b>--with-unixodbc</b> tells the compiler to include the necessary pieces to allow unixodbc
+        to use Freetds, namely /usr/lib/libtdsodbc.so.  Because we have already installed everything, the fix
+        is a quick update of the ebuild to look like the above, and then reinstall it like so:
+        <code>
+root# emerge -v freetds
+        </code>
+        This will update Freetds including the unixODBC stuff we need
+    </action>
+    
+    <action title="Register mssql with Freetds" anchor="freetds">
+        Now that we have everything installed nicely, it's time to configure everything. The first piece is the
+        "Freetds registration". This is done via the file <b>/etc/freetds.conf</b>
+        <br />
+        Here is what I added to the very bottom of the file:
+        <code>
+# A typical Microsoft SQL Server 2000 configuration
+[elk]
+        host = sql.internal.rockfloat.com
+        port = 1433
+        tds version = 7.0
+        </code>
+        This gives your system a Freetds server by the name of <b>elk</b> that points to the hostname of
+        <b>sql.internal.rockfloat.com</b>, using port <b>1433</b> and tds vesion <b>7.0</b>
+    </action>
+    
+    <action title="Configure a unixODBC driver" anchor="odbc_driver">
+        Now that you have a Freetds server, we need a unixODBC driver that can talk to it. This is done via the
+        file: <b>/etc/unixODBC/odbcinst.ini</b>
+        <br />
+        Here is what I wrote in my file:
+        <code>
+[TDS]
+Description = v0.61 with protocol v4.2 and v7
+Driver = /usr/lib/libtdsodbc.so
+        </code>
+        Here <b>TDS</b> is the name of our new unixODBC driver, and <b>/usr/lib/libtdsodbc.so</b> is the binary that is
+        actual binary driver (remember this is the piece that required a reinstall of Freetds after modifiying the ebuild)
+    </action>
+    
+    <action title="Install a new unixODBC datasource" anchor="datasource">
+        Now that we have a server, and a driver.. it's time for a datasource that brings this all together.
+        This is done via the file: <b>/etc/unixODBC/odbc.ini</b>
+        <br />
+        Here is what i wrote in my file:
+        <code>
+[alpha]
+Driver          = TDS
+Description     = Rockfloat alpha mssql server
+Trace           = No
+Servername      = elk
+Database        = rockfloat_alpha
+UID             = rockfloat_alpha
+        </code>
+        Here let's go thru this file from top to bottom, explaining what stuff is:<br />
+        <b>alpha</b> is the name of our new datasource, and is known as a "dsn" to php or python.<br />
+        <b>Thinkflat alpha mssql server</b> is a silly description of what this datasource points to.<br />
+        <b>Trace = No</b> is something I haven't looked into  :)<br />
+        <b>elk</b> is the name of our Freetds server created above.<br />
+        <b>rockfloat_alpha</b> is the name of our mssql database that we want to connect to.<br />
+        <b>rockfloat_user</b> is the name of the mssql user that has permissions to query this database.
+        <br /><br />
+        All done with the configuration, that wasn't so bad!
+    </action>
+    
+    <action title="Install the adodb for php script(s)" anchor="adodb">
+        The adodb for php library is a really nice database abstraction layer for php. It makes things much
+        simpler if you were ever to move from mssql to mysql or postgres (the latter being my favorite.)
+        For this we will go into a working website and install the files:
+        <code>
+root# cd /path-to-website/htdocs
+wget http://phplens.com/lens/dl/adodb420.tgz
+tar zxvf adodb420.tgz
+rm adodb420.tgz
+        </code>
+        Now we will have a directory named adodb in the root of your website's functional root. For those who
+        don't know what this means, basically do: http://your-website/adodb and apache would look for a file
+        by the name of index.html inside the directory you just created.
+        <br />
+        Anyway...
+        <br />
+    </action>
+    
+    <action title="Write simple php script to test your new setup" anchor="test">
+        Assuming things went well, create a file called gentoo-mssql-setup.php inside of htdocs with the
+        following content:
+        <code>
+&lt;?
+// include the adodb abstraction library
+include('adodb/adodb.inc.php');
+
+// create a connection object (here you could use odbc, postgres, mysql, ect.)
+$objConn =&amp; ADONewConnection('odbc');
+
+// tell adodb that we want the recordset to include an associative array of fieldnames
+$objConn->SetFetchMode(ADODB_FETCH_ASSOC);
+
+// tell the adodb connection object to connect to our shiny new datasource
+$objConn->Connect('alpha', 'rockfloat_user','PASSWORD');
+
+// create a simple query
+$tmp_str_sql = "select * from VALID-TABLE";
+
+// execute the query
+$objRS = &amp;$objConn->Execute($tmp_str_sql);
+
+// if we have a recordset returned (true) then...
+if($objRS){
+    print('Recordcount: '.$objRS->RecordCount().'&lt;br /&gt;');
+    
+    // loop thru the recordset
+    while(!$objRS-&gt;EOF){
+        print('data returned: '.$objRS-&gt;fields['VALID-FIELDNAME'].'&lt;br /&gt;');
+        $objRS-&gt;MoveNext();
+    }
+    
+    // clean house
+    $objRS->close();
+}
+?&gt;
+        </code>
+        Now pull up the page in your favorite browser (most likely opera) and go to:
+        <br />
+        <br />
+        <link uri="http://localhost/gentoo-mssql-setup.php">http://your-website/gentoo-mssql-setup.php</link>
+        which hopefully will post something like (but with your data):
+        <br /><br />
+        data returned: Foo<br />
+        data returned: Bar<br />
+    </action>
+    
+    <action title="Get python ready to talk to mssql" anchor="python">
+        Haven't written this part yet  :/
+    </action>
+    
+    <action title="Helpfull links on the subject" anchor="links">
+        - <link uri="http://phpbuilder.com/columns/alberto20000919.php3?page=2">http://phpbuilder.com/columns/alberto20000919.php3?page=2</link><br />
+        - <link uri="http://linuxjournal.com/article.php?sid=6636&amp;mode=thread&amp;order=0">http://linuxjournal.com/article.php?sid=6636&amp;mode=thread&amp;order=0</link><br />
+        - <link uri="http://www.unixodbc.org/doc/FreeTDS.html">http://www.unixodbc.org/doc/FreeTDS.html</link><br />
+        - <link uri="http://php.weblogs.com/ADODB">http://php.weblogs.com/ADODB</link><br />
+        - <link uri="http://www.microsoftsucks.com/">http://www.microsoftsucks.com/</link><br />
+    </action>
+    
+    <!--
+    <action title="" anchor="">
+        <code></code>
+        <link uri="http://dba.openoffice.org/drivers/postgresql/postgresql-sdbc-0.5.0.zip">driver</link>
+    </action>
+    -->    
+</guide>

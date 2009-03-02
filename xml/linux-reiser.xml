@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="10/20/2002">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Linux - reiserfs setup">
+        This document will go thru a step by step setup of the Reiser file system
+        on Red Hat 7.2 (Note: this howto is outdated).
+    </abstract>
+    <change date="10/20/2002 @15:00">Initial creation</change>
+    
+    <action title="install distro (redhat 7.2 for this example)" anchor="install_distro"></action>
+       
+    <action title="Compile reiser support into the kernel, 7.2:" anchor="kernel">
+        <code>
+root# cd /usr/src/2.4.7
+root# make menuconfig
+        </code>
+        make sure "prompt for development and/or incomplete code..." is checked under: "code
+        maturity level options"
+        <br /><br />
+        go to filesystems.. and put shift + y into the reiser box // we want it "compiled in", not
+        "a module of" the kernel
+        <br /><br />
+        exit and save
+    </action>
+    
+    <action title="Compile your new kernel" anchor="compile">
+        <code>
+root# make dep &amp;&amp; make bzImage &amp;&amp; make modules &amp;&amp; make modules_install
+        </code>
+    </action>
+    
+    <action title="Install your new kernel" anchor="install">
+        cd to /boot and take note of the file /boot/vmlinuz, this is your current kernel
+        <code>
+cp /usr/src/linux-2.4.7-10/arch/i386/boot/bzImage /boot/vmlinuz-2.4.7-10.reiser
+cp vmlinuz-2.4.7-10.reiser /boot/System.map
+        </code>
+    </action>
+    
+    <action title="add another entry boot entry into /etc/lilo.conf, here is an example lilo.conf
+        (note the second image= stuff):" anchor="lilo">
+        <code>
+prompt
+timeout=100
+default=linux-reiser
+boot=/dev/hda
+map=/boot/map
+install=/boot/boot.b
+message=/boot/message
+
+image=/boot/vmlinuz-2.4.7-10
+    label=linux-stock
+    read-only
+    root=/dev/hda3
+
+image=/boot/vmlinuz-2.4.7-10.reiser
+    label=linux-reiser
+    read-only
+    root=/dev/hda3
+        </code>
+    </action>
+    
+    <action title="Update your master boot record" anchor="mbr">
+        run lilo to update the mbr with /boot and /etc/lilo.conf
+        <code>
+root# lilo
+        </code>
+    </action>
+    
+    <action title="just to be sure, resolve any dependancies" anchor="dependancies">
+        <code>
+root# depmod -a 2.4.7-10
+        </code>
+    </action>
+    
+    <action title="Finish up" anchor="reboot">
+        cross fingers and reboot :)
+    </action>
+    
+    <action title="Setup any additional reiser dependancies" anchor="dependancies_more">
+        upgrade to at least lilo 26.1
+        <code>
+root# rpm -ivh rpm-26.2.rpm
+        </code>
+    </action>
+    
+    <action title="Prepare your partitions" anchor="fdisk">
+        say we have this fdisk -l
+        <code>
+hda1 = /boot
+hda2 = swap
+hda3 = /
+
+hdb = clean
+hdc = clean
+      </code>
+      use fdisk to add partitions hdb1 and hdc1 to hdb and hdc respectively
+    </action>
+    
+    <action title="Format the new partition(s) with reiserfs" anchor="format">
+        <code>
+root# mkreiserfs -h r5 /dev/hdb1
+root# mkreiserfs -h r5 /dev/hdc1
+root# mount -t reiserfs /dev/hdb1 /hdb
+root# mount -t reiserfs /dev/hdc1 /hdc
+        </code>
+    </action>
+    
+    <action title="Update /etc/fstab" anchor="fstab">
+        make your /etc/fstab look like this:
+        <code>
+/dev/hda1      /boot          ext2          defaults                1 1
+/dev/hda2      swap           swap          defaults                0 0
+#/dev/hda3     /              ext2          defaults                0 0
+/dev/hdb1      /hdb           reiserfs      defaults                1 1
+/dev/hdc1      /              reiserfs      defaults                1 1
+none           /dev/pts       devpts        gid=5,mode=620          0 0
+none           /proc          proc          defaults                0 0
+none           /dev/shm       tmpfs         defaults                0 0
+/dev/cdrom     /mnt/cdrom     iso9660       noauto,owner,kudzu,ro   0 0
+/dev/fd0       /mnt/floppy    auto          noauto,owner,kudzu      0 0
+        </code>
+    </action>
+    
+    <action title="Now that /dev/hdc1 is ready to be root we need to update lilo again" anchor="lilo_conf">
+        Make /etc/lilo.conf look like this:
+        <code>
+prompt
+timeout=50
+default=linux
+boot=/dev/hda
+map=/boot/map
+install=/boot/boot.b
+message=/boot/message
+linear
+
+image=/boot/vmlinuz-2.4.7-10
+    label=linux
+    initrd=/boot/initrd-2.4.7-10.img
+    read-only
+    root=/dev/hdc1
+        </code>
+    </action>
+    
+    <action title="Update the master boot record" anchor="mbr_again">
+        Remember to run lilo -v to make sure you have lilo 26.1 or greater
+        <code>
+root# lilo
+        </code>
+    </action>
+    
+    <action title="Copy the entire system to the temporary root partition" anchor="cp">
+        <code>
+cp -ax / /hdc
+        </code>
+    </action>
+    
+    <action title="We are now ready to boot to the temporary root partition" anchor="boot">
+        reboot when your sure all of the following happened:
+        <list>you have all of / on a reiser partition (hdc1)</list>
+        <list>you have /etc/fstab showing root as hdc1 and it being reiserfs</list>
+        <list>/etc/lilo.conf points root toward hdc1</list>
+        <list>you have ran lilo to add the config to the mbr</list>
+    </action>
+    
+    <action title="hope you don't get a kernel panic" anchor="test"></action>
+    
+    <action title="upon bootup, mtab will show:" anchor="mtab">
+        <code>
+/dev/hda1   /boot    ext2                       0 0
+/dev/hdb1   /hdb     reiserfs                   0 0
+/dev/hdc1   /        reiserfs                   0 0
+none        /proc    proc  rw                   0 0
+none        /dev/pts devpts rw,gid=5,mode=620   0 0
+none        /dev/shm tmpfs rw                   0 0
+        </code>
+    </action>
+    
+    <action title="now you need to make hda3 (the old root) reiserfs" anchor="switch">
+        <code>
+root# mkreiserfs -h r5 /dev/hda3
+root# mount -t reiserfs /dev/hda3 /hda
+        </code>
+    </action>
+    
+    <action title="Copy the sytem back to the normal place" anchor="copy_back">
+        Now that /dev/hda3 is reiserfs, you can copy the system back onto it
+        <code>
+root# cd /
+root# cp -ax * /hda
+        </code>
+    </action>
+    
+    <action title="Edit /etc/fstab yet again" anchor="fstab_again">
+        Make it look like this:
+        <code>
+/dev/hda1      /boot          ext2        defaults                1 1
+/dev/hda2      swap           swap        defaults                0 0
+/dev/hda3      /              reiserfs    defaults                0 0
+/dev/hdb1      /hdb           reiserfs    defaults                1 1
+/dev/hdc1      /hdc           reiserfs    defaults                1 1
+none           /dev/pts       devpts      gid=5,mode=620          0 0
+none           /proc          proc        defaults                0 0
+none           /dev/shm       tmpfs       defaults                0 0
+/dev/cdrom     /mnt/cdrom     iso9660     noauto,owner,kudzu,ro   0 0
+/dev/fd0       /mnt/floppy    auto        noauto,owner,kudzu      0 0
+        </code>
+    </action>
+    
+    <action title="Edit /etc/lilo.conf" anchor="lilo_final">
+        Update lilo.conf telling it to boot from your shiny new
+        reiser root partition:
+        <code>
+prompt
+timeout=50
+default=linux
+boot=/dev/hda
+map=/boot/map
+install=/boot/boot.b
+message=/boot/message
+linear
+
+image=/boot/vmlinuz-2.4.7-10
+        label=linux
+        initrd=/boot/initrd-2.4.7-10.img
+        read-only
+        root=/dev/hda3
+        </code>
+    </action>
+    
+    <action title="now you gotta get /boot on reiser" anchor="update_boot">
+        <code>
+root# mkdir /boot_good
+root# cp -ax /boot /boot_good
+root# ps -aux | grep klogd
+--> kill *whatever the pid of klogd is
+root# umount /boot
+root# mkreiserfs -r5 /dev/hda1
+root# mount -t reiserfs /dev/hda1 /boot
+root# cp -ax /boot_good /boot
+        </code>
+    </action>
+    
+    <action title="edit fstab, changing the filetype of /boot from ext2 to reiserfs" anchor="clean_fstab"></action>
+        
+    <action title="DO NOT REBOOT UNTIL THE NEXT STEP IS COMPLETE.. OTHERWISE YOUR SCREWED" anchor="warning">
+        Update the master boot record once again with the new lilo config:
+        <code>
+root# lilo
+        </code>
+    </action>
+    
+    <action title="reboot and now you got everything on reiser, including root and boot" anchor="finish">
+        Congrats, hopefully your now looking at a system with both /root and /boot on reiserfs
+        <br /><br />
+        Well done, you deserve coffee and a pop tart
+    </action>
+    
+        
+    
+    <!--
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->    
+</guide>

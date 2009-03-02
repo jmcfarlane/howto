@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="02/11/2006">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Gentoo - kernel upgrade">
+        This document will go thru a step by step upgrade of an existing
+        kernel, or upgrade to an entirely new kernel version.
+    </abstract>
+    <convention>Please remember that I'm no kernel expert, and making even the slightest wrong step
+        in a kernel update can render your machine useless.
+    </convention>
+    <convention>Please always have a live-cd available
+        and know how to use it - just in case something goes wrong :/
+    </convention>
+    <change date="03/28/2007 @ 19:18">Initial creation</change>
+    
+    <action title="Introduction and terminology" anchor="intro">
+        Kernel upgrades can really be confusing when first learning how things
+        work.  Essentially there are two things you could be talking about
+        when using the phrase <i>kernel upgrade</i>:
+        <list>
+            <element>Making changes to a particular kernel version (eg:
+            include another kernel module or something)
+            </element>
+            <element>
+                Upgrading from one kernel version to another, say from a.b.c
+                to a.b.f.  When upgrading, it's pretty much understood that
+                the kernel configuration will probably change at least a
+                little bit.
+            </element>
+        </list>
+        There are four things you'll need to pay attention to when upgrading
+        your kernel:
+        <list>
+            <element><lt>/usr/src/linux</lt>
+                A symlink to the currently "active" kernel tree.  This should
+                always be linked to the kernel you want to use.
+            </element>
+            <element><lt>/usr/src/linux-2.6.X-gentoo-rX</lt>
+                The kernel source tree.  This directory holds a patched version
+                of the official kernel sources.
+            </element>
+            <element><lt>/usr/src/linux-2.6.X-gentoo-rX/.config</lt> 
+               The kernel's configuration file.  This file is what determines
+               how the kernel is to be compiled.
+            </element>
+            <element><lt>/usr/src/linux-2.6.X-gentoo-rX.config</lt>
+                This [<em>only by convention</em>] holds a known good backup
+                of the kernel config.
+            </element>
+        </list>
+    </action>
+   
+    <action title="Validate your backup" anchor="prepare">
+        Because the kernel's configuration is held in a single file, before
+        you make any changes you want to ensure you have a valid backup.  Here
+        are the steps you need to follow to validate your backup:
+        <list>
+            <element>
+                Look to see what kernel version is currently active.  This is
+                done by looking at what the <lt>/usr/src/linux</lt> symlink is
+                linked to.  Let's say it's <em>linux-2.6.X-gentoo-rX</em>
+            </element>
+            <element>
+                See if you have a known good backup for this kernel version.
+                It should be located here:
+                <lt>/usr/src/linux-2.6.X-gentoo-rX.config</lt>.  If it
+                exists then you probably were a good little boy last time you
+                compiled your kernel.  If not it looks like either this is your
+                first time doing a kernel upgrade, or you were not a good
+                little boy last time you did an upgrade.  If you just got a
+                guilty feeling... then the kernel nazi says: "<i>No candy for
+                you!</i>"
+                <p>
+                    If it didn't exist, then you need to make a backup now:
+                    <code>
+root# cp /usr/src/linux/.config /usr/src/linux-2.6.X-gentoo-rX.config
+                    </code>
+                </p>
+            </element>
+            <element>
+                It's also handy to have a backup of the kernel itself.  It's
+                important to only do this if you're sure the kernel is
+                bootable:
+                <code>
+root# cd /boot
+root# cp `uname -r` BACKUP
+                </code>
+                You could use it as a last resort if you ever find yourself stuck
+                at a Grub subsystem prompt
+            </element>
+        </list>
+    </action>
+
+    <action title="Mount boot" anchor="mount_boot">
+        You'll need to eventually, why not now:
+        <code>
+root# mount /boot
+        </code>
+    </action>
+
+    <action title="Determine your purpose" anchor="purpose">
+        You need to decide if you want to upgrade to a new kernel version, or
+        simply reconfigure the same kernel version.  If you want to make a
+        change to the kernel version you already have... skip to the
+        <link uri="#configure">next section</link>.  Otherwise you need to
+        update the symlink to point to the kernel version you do want to work
+        with.  Let's say you want to use <em>linux-2.6.X-gentoo-rY</em>:
+        <code>
+root# cd /usr/src
+root# rm linux
+root# ln -s linux-2.6.X-gentoo-rY linux
+        </code>
+        <tip>
+            It's very important to NOT forget this next step when switching
+            from one kernel version to another.  If you're not upgrading to a
+            new kernel version, you should be skipping to the
+            <link uri="#configure">next section</link>.
+        </tip>
+        Now you need to copy your old kernel configuration, into your new
+        kernel source tree.  Then you need to handle any configuration changes
+        that the new version offers.  For example, say the new kernel supports
+        a super cool finger print reader, and additional encryption support
+        was added.  Before you can move on, you need to decide how you want to
+        handle these two features (and any others).
+        <code>
+root# cd /usr/src/linux
+root# make oldconfig
+<cmt>
+# You will now be asked a series of questions.  For each you can answer with
+# Y, M, N.  This is to compile it in, compile as a module, or don't support
+# it at all.  If you just hit ENTER you will accept the default answer, often
+# the best choice.
+</cmt>
+        </code>
+    </action>
+
+    <action title="Configure the kernel" anchor="configure">
+        Here's the fun part.  You get to go thru the kernel and pick what you
+        do and don't want.  It's your chance to remove stuff you don't want,
+        add stuff you do want... or change stuff to become modules.  You can
+        do this a few different ways, though I like to do it old school:
+        <code>
+root# cd /usr/src/linux
+root# make menuconfig
+        </code>
+        Here you use an ncurses type application to pick the stuff you want.
+        I can't really help you here, just do what you need to do.
+        <p>
+            When you're finished, keep hitting exit until you receive a prompt
+            to save your configuration.  You <em>DO</em> want to save it.  It will be
+            saved to: <lt>/usr/src/linux/.config</lt>
+        </p>
+    </action>
+
+    <action title="Compile the kernel" anchor="compile">
+        When you compile the kernel, it does two things:
+        <list>
+            <element>
+                Compiles the kernel into a file named:
+                <lt>bzImage</lt>
+            </element>
+            <element>
+                Compiles certain things as kernel modules, that can be loaded
+                and unloaded at runtime
+            </element>
+        </list>
+        Off we go:
+        <code>
+root# cd /usr/src/linux
+root# make &#38;&#38; make modules_install
+        </code>
+    </action>
+
+    <action title="Copy the new kernel to boot" anchor="place_it">
+        The kenel lives in <lt>/boot</lt>.  Let's say for example that you
+        just compiled <em>linux-2.6.X-gentoo-rX</em>, then you will do:
+        <code>
+root# cd /usr/src/linux
+root# cp arch/i386/boot/bzImage /boot/linux-2.6.X-gentoo-rX
+root# cp System.map /boot/System-map-linux-2.6.X-gentoo-rX
+        </code>
+        If you're making changes to the same kernel version, than you just
+        overwrote the old kernel (all good because you have a backup).
+    </action>
+
+    <action title="Update grub" anchor="grub">
+        If you are switching to a new kernel version, you need to update your
+        grub configuration file.  Use your editor of choice and add the new
+        kernel into: <lt>/boot/grub/grub.conf</lt>
+        <p>
+            Then refresh the master boot record.  Be sure to replace the part
+            in red with your actual device:
+            <code>
+root# grub-install --no-floppy /dev/<em>sda</em>
+            </code>
+            If you happen to have something like an HP DL series server with
+            scsi disks... you might need to do something along the lines of this
+            instead of the above command:
+            <code>
+root# grub
+grub> device (hd0) /dev/cciss/c0d0
+grub> root (hd0,0)
+grub> setup (hd0)
+grub> quit
+            </code>
+        </p>
+    </action>
+
+    <action title="Cross your fingers and reboot" anchor="reboot">
+        Let's go thru a quick checklist:
+        <list>
+            <element>You validated your backups</element>
+            <element>You compiled your new kernel</element>
+            <element>You updated grub.conf</element>
+            <element>You updated the MBR</element>
+        </list>
+        Pull the trigger:
+        <code>  
+root# reboot
+        </code>
+    </action>
+
+    <action title="Rinse and repeat" anchor="repeat">
+        Keep performing the above steps as needed... till you get the kernel
+        where you want it.
+    </action>
+
+    <action title="Backup the known good configuration" anchor="backup">
+        Once you're booted into a kernel that you're happy with, you should
+        backup it's configuration.  Say the kernel you are happy with is
+        version <em>linux-2.6.X-gentoo-rY</em> then you would do:
+        <code>
+root# cd /usr/src
+root# cp linux/.config linux-2.6.X-gentoo-rY.config
+        </code>
+    </action>
+
+
+    <!--
+    <action title="" anchor="">
+        
+        <code></code>
+    </action>
+    -->
+    
+</guide>

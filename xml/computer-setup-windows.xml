@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="06/16/2007">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="How to setup a brand new Windows computer">
+        This document will help you setup your new computer properly
+        from the very beginning, with the hopes that this will not
+        elimintate, but help mitigate security related problems down the
+        line (viruses/popups). Hardening a computer against security
+        related threats is no easy task and this document hardly
+        scratches the surface... but hopefully it will give a place to
+        start.
+    </abstract>
+    <convention>This howto currently only applies to Windows XP</convention>
+    <convention>You do hate popups... don't you?</convention>
+    <change date="06/16/2006 @18:00">Initial creation</change>
+
+    <action title="Make sure your computer isn't on the internet" anchor="safe">
+        The very first thing you want to do is <em>keep it OFF of the internet</em>
+        until it's ready.  That means if you already plugged it into your dsl/cable
+        box, unplug it.  You want your computer to be a bit more "hardened"
+        before you subject it to the nasty world wide web.
+        <link uri="http://news.com.com/Study%3A+Unpatched+PCs+compromised+in+20+minutes/2100-7349_3-5313402.html?part=r">
+            REFERENCE
+        </link>
+        <p>
+            For all you Dilbert fans out there, the assumption here is that
+            you're not reading this on your new computer.  Use something
+            else!
+        </p>
+    </action>
+    
+    <action title="Introduction" anchor="introduction">
+        A bit of background is probably the best way to get started.
+        <p>
+            Windows has alot of default settings that make things
+            "easy", but they make your computer more vulnerable.
+            As you read thru this document you'll learn how to change a
+            few of these default settings to help make your new computer
+            more secure.
+        </p>
+        <p>
+            You can't 100% protect any computer that's connected to the
+            internet I don't care how hard you try... the goal is simply
+            to minimize it. With safe practices and a decently hardened
+            computer I think it's realistic to expect approximately 3
+            years of life before you have to have it rebuilt (not
+            replaced, just "redone" by someone).
+        </p>
+    </action>
+
+    <action title='What is a "unprivileged user"?' anchor="unprivileged_user">
+        <b>Answer</b>: A user that only belongs to the <lt>users</lt> group.
+        <p>
+            Currently your computer has one account: <lt>Administrator</lt>
+            which happens to be a member of the <lt>Administrator</lt>
+            group (Windows security is managed by users and groups).
+            <image uri="win_login_default.png" />
+            This means that <i>this</i> user or member(s) of <i>this</i> group
+            have full rights on your computer.
+        </p>
+
+        <p>
+            Depending on how the manufacturer setup your computer it
+            might give you an opportunity to create additional users.
+            It's important to understand that these users will also be a
+            member of the Administrator group.
+        </p>
+        <p>
+            This is a security risk, because if "something" tries to do
+            something bad  to your computer, they do so
+            <em>
+                under the privileges of the currently logged in user
+            </em>.
+            Another words, if I'm a virus... I'm going to hope you are using
+            an administrative account.
+        </p>
+        <p>
+            The solution is to make sure you have a user that is not a member
+            of the <lt>administrators</lt> group and always log into the computer using
+            this account.  This will drastically make your computer safer
+            against attack, though you will have to deal with the hastle of
+            having to temporarily log in as <lt>Adminstrator</lt> to do
+            things like:
+            <list>
+                <element>Install software</element>
+                <element>Change the clock time</element>
+                <element>Write to files outside of: <lt>My Documents</lt></element>
+                <element>Change system settings</element>
+                <element>Configure hardware or networking</element>
+            </list>
+            <tip>
+                To summarize: logging in as an unpriveledged user will
+                make your computer much more resistant to spyware and viruses.
+            </tip>
+        </p>
+        <image uri="win_groups_default.png" />
+    </action>
+    
+    <action title="Create an unprivileged user" anchor="create_unprivileged_user">
+        Follow these steps to create an unpriviledged user:
+        <list>
+            <element>
+                Open the <lt>Control Panel</lt> from the start menu
+                <image uri="win_startmenu_default.png" />                
+            </element>
+            <element>
+                Select <lt>Administrative Tools</lt> from the Control Panel
+                <image uri="win_control_panel.png" />
+            </element>
+            <element>
+                Select <lt>Computer Management</lt> from Administrative Tools
+                <image uri="win_administrative_tools.png" />
+            </element>
+            <element>
+                Expand <lt>Local Users and Groups</lt>
+                <image uri="win_computer_management.png" />
+            </element>
+            <element>
+                If you have created any users already you will see them here
+                <image uri="win_users_default.png" />
+                Above is what most fresh installations of Windows XP will look
+                like.
+            </element>
+            <element>
+                Right click on <lt>Users</lt> and select <lt>New User...</lt>
+                <image uri="win_user_add.png" />
+            </element>
+            <element>
+                Fill out the form, mine looks like this:
+                <image uri="win_user_add_form2.png" />
+                When finished click <lt>Create</lt>.
+            </element>
+            <element>
+                Right click on the user you just created and select
+                <lt>Properties</lt>
+                <image uri="win_user_manage.png" />
+                Then select the <lt>Member Of</lt> tab
+                <image uri="win_user_preferences.png" />
+            </element>
+            <element>
+                Take note that the user is <b>only</b> a member of the
+                Users group
+                <image uri="win_user_preferences2.png" />
+            </element>
+        </list>
+    </action>
+    
+    <action title="Log in using the new unpriviledged user" anchor="log_in">
+        The new user will show up in the menu when you log out or restart
+        your computer, mine looks like this:
+        <image uri="win_login_newuser.png" />
+        Select your shiney new user and enter the password
+        <image uri="win_login_newuser2.png" />
+        <tip>
+            The only time you should use the Administrator account is if you
+            need to install software, change the clock... or other
+            administrative type tasks.
+        </tip>
+    </action>
+    
+    <action title="What you need to know about software" anchor="software_info">
+        <b>Begin rambling, just to brainstorm ideas...</b>
+        <p>
+            Software on your computer is installed in different ways.
+            Some is installed by the manufacturer (Dell, HP, Gateway),
+            some is installed by the operating system or it's
+            subsystems. Windows update is a good example of this, as
+            it's sort of part of the operating system, and it installs
+            stuff for you (patches and things). The rest is usually
+            installed by you. Here's where it gets important. Software
+            is usually installed by double clicking on a setup file such
+            as "setup.exe". Usually this is followed by a series of
+            prompts which some people referr to as a "wizard". Either
+            way the result is that your system has new files and
+            settings which represent the software you just installed.
+        </p>
+        <p>
+            What's confusing is when software gets installed... but how
+            it got there is a mystery. For example, let's say you have
+            "Gator" installed on your computer and it's driving you
+            nuts. You likely don't remember installing it, nor anyone
+            else. It could have been installed several different ways
+            but I do happen to know that installing "Comet Cursor" I
+            think it was, would also install "Gator" without really
+            telling you. This is extremely significant because it
+            illustrates that when you install something, it might do
+            things that you don't expect. It's very important to think
+            before you install something, because clicking on that
+            "setup.exe" file ultimately lets the person who wrote the
+            software have complete control over your system for the
+            duration that it's being installed.
+        </p>
+        <p>
+            Below you'll find a list of software packages that are considered
+            <i><em>at least by me</em></i> to be professional and trustworthy.
+        </p>
+        
+    </action>
+    
+    <action title="Recommended software" anchor="recommended_software">
+        Here is a list of software packages that you should migrate to:
+        <table>
+            <header>
+                <col>Current</col>
+                <col>Recommended</col>
+                <col>Reason</col>
+            </header>
+            <row>
+                <col>Internet Explorer</col>
+                <col>Mozilla Firefox</col>
+                <col>
+                    Internet Explorer is the single most dangerous piece
+                    of software you can use. It has a terrible history
+                    for security problems, some of which to this day
+                    have yet to be addressed by Microsoft. Additionally
+                    it's extremely outdated and is lacking features that
+                    most other browsers have. Mozilla Firefox is an
+                    excellent software package used by millions of
+                    people. It has an excellent feature set, is very
+                    secure.
+                    <link uri="http://www.forbes.com/home/ebusiness/2004/10/04/cx_pp_1004mondaymatchup.html">REFERENCE</link>,
+                    <link uri="http://www.securityfocus.com/columnists/249">REFERENCE</link>,
+                    <link uri="http://reviews.cnet.com/4520-3513_7-6333507-1.html">REFERENCE</link>
+                </col>
+            </row>
+            <row>
+                <col>Outlook</col>
+                <col>Mozilla Thunderbird</col>
+                <col>
+					 Thunderbird is not as integrated with the Windows Operating system and
+					 thus is not as vulnerable to
+					 <i>windows operating system</i>
+					 vulnerabilities. Thunderbird is designed to be solid from a security
+					 perspective with things like defaultly not downloading images, spam and
+					 phishing detection. It also supports pretty much everything you'd ever
+					 need when it comes to email, though it does not [<i>yet</i>]
+					 support calendering like Outlook does with Microsoft Exchange Server.
+                </col>
+            </row>
+            <row>
+                <col>Microsoft Office</col>
+                <col>OpenOffice</col>
+                <col>
+                    Microsoft Office is a huge target. OpenOffice is an
+                    alternative product that has an impressive set of
+                    features and has (so far) a very good security history.
+                    Additionally it has a few unique features that are really
+                    nice:
+                    <list>
+                        <element>Support for one click export to PDF</element>
+                        <element>
+                        Full support for MS formats, meaning you can
+                        still use your doc/xls/ppt files.
+                        </element>
+                        <element>
+                            Impress (like powerpoint) documents can be
+                            exported to flash which really comes in
+                            handy
+                        </element>
+                    </list>   
+                    Mark my word... in time the educational system will make
+                    ODF the default file format, which is the standard in OpenOffice.
+                    <link uri="http://en.wikipedia.org/wiki/OpenDocument_debate">REFERENCE</link>
+                </col>
+            </row>
+            <row>
+                <col>Instant messenger clients: AOL, Yahoo, MSN</col>
+                <col>Trillian/Gaim</col>
+                <col>
+                    You can replace all of your instant messenger
+                    software with one , and it works very well.
+                    <link uri="http://gaim.sourceforge.net/security/">
+                        REFERENCE
+                    </link>
+                </col>
+            </row>
+            <row>
+                <col>Windows Media Player</col>
+                <col>Winamp and VLC</col>
+                <col>Windows media player is also a target for malware.  Using
+                wimamp and VLC keeps you under the radar a bit.</col>
+            </row>
+            <row>
+                <col>Microsoft Hotmail</col>
+                <col>Yahoo Mail or Google Gmail</col>
+                <col>
+                    Hotmail doesn't exactly have a strong record when it
+                    comes to security
+                </col>
+            </row>
+            <row>
+            	<col>N/A</col>
+            	<col>7zip</col>
+            	<col>
+            		There's nothing really insecure about the default
+            		Windows XP zip utility, it just doesn't work very
+            		well.  7zip is tiny, free - and is excellent.
+            	</col>
+            </row>
+            <row>
+                <col>Mcafee/Norton</col>
+                <col>ClamWin</col>
+                <col>
+                    There's nothing wrong with either Norton or Macfee,
+                    though they do tend to be kinda, busy? and often
+                    times people don't pay for the software after the
+                    trial expires and they wind up without any
+                    protection. ClamWin is a port of ClamAV and is free
+                    for use.
+                </col>
+            </row>
+            <row>
+                <col>RealPlayer</col>
+                <col>Real Alternative</col>
+                <col>
+                    There's nothing wrong with RealPlayer really from a
+                    security perspective, but it's so annoying how it
+                    tries to take over.
+                </col>
+            </row>
+        </table>
+        It's also important to note that all of the software packages
+        recommended above are open source, meaning that they are free
+        for use, and are actively supported by the community.
+
+        <p>
+            Since <b>NOT</b> using Internet Explorer is probably the best thing
+            you can do to keep your computer safe, let's go thru how to
+            install Firefox:
+        </p>
+        <list>
+            <element>
+                Remember you need to log in as <lt>Administrator</lt> to do this.
+            </element>
+            <element>
+                Use Internet Explorer (it's all you have right now) to download
+                the installation file from
+                <link uri="http://www.mozilla.com/firefox/">
+                    http://www.mozilla.com/firefox/
+                </link>
+                and click on the "Download Firefox" link.
+                <image uri="win_download_firefox.png" />
+            </element>
+            <element>
+                When prompted, remember to <em>Always</em>
+                "Save" the file. Never choose "Run".
+                <image uri="win_download_dialog.png" />
+                The file will defautly be placed on your desktop, so you know
+                where to find it after it's finished downloading.
+            </element>
+            <element>
+                Double click on the Firefox Setup executable file placed
+                on your desktop to begin the installation.
+                <image uri="win_firefox_install.png" />
+                Follow the prompts, taking the defaults is just fine.
+            </element>
+            <element>
+                When the installation is finished, it will place an icon
+                on your desktop that you can use to start the application.
+                If you like to use the <lt>Quicklaunch</lt> icons, it will
+                be there also
+            </element>
+            <element>
+                Ok, remembering our good practice here... if there's no other
+                software to install:
+                <p>
+                    <em>
+                        Remember to log out, and log back in as your
+                        unpriviledged user!
+                    </em>
+                </p>
+            </element>
+        </list>
+        
+        
+        
+    </action>
+    
+    <action title="Patches and Windows Update" anchor="patches">
+        Keeping Windows XP patched is extremely important for the
+        security health of your PC. Luckily Microsoft does an excellent
+        job of making this easy and reliable.
+        <p>
+            All you need to do is enable <lt>Windows Update</lt> to manage that
+            for you.  But because this is a brand new computer, you need to 
+            manually patch it.
+        </p>
+        <p>
+            It's important to understand that <em>this should be the first
+            time your computer has ever been plugged into the internet</em>
+            and the goal is to get it patched as quickly as possible.
+        </p>
+        <list>
+            <element>
+                You need to be logged into your computer as the Administrator
+                to install patches manually.
+            </element>
+            <element>
+                Select <lt>Windows Update</lt> from the startup menu
+                <image uri="win_startmenu_default.png" />
+            </element>
+            <element>
+                Internet Explorer will open, look for something like this
+                <image uri="windows_update.png" />
+                You want to click on the <lt>Express</lt> button to get high
+                priority updates.
+            </element>
+            <element>
+                You will be presented with a list of patches that need to be
+                applied
+                <image uri="windows_update3.png" />
+                Click on <lt>Install Updates</lt> to install them.
+            </element>
+            <element>
+                You will see the patches download and install...
+                <image uri="windows_update_installing.png" />
+            </element>
+            <element>
+                When it's finished it will most likely prompt you to restart
+                your computer.  Sometimes this isn't neccessary.
+                <image uri="windows_update_restart.png" />
+            </element>
+            <element>
+                When your computer has finished rebooting, repeat this process
+                over and over until you see this when looking for new updates:
+                <image uri="windows_update_finished.png" />
+               
+            </element>
+        </list>
+        Now you need to configure Windows Update to run automaticaly, cuz
+        if you're lazy like me you'll forget to keep up on it.
+        <list>
+            <element>
+                Click on Windows Update from the start menu like you did before,
+                and look toward the right this time
+                <image uri="windows_update.png" />
+            </element>
+            <element>
+                If it says <lt>Turn on Automatic Updates</lt> then click on it
+                and select a time that your computer is likely to be turned on.
+                <image uri="win_automatic_updates.png" />
+            </element>
+            <element>
+                 You're all finished, click <lt>OK</lt> and log in as your
+                 unpriviledged user  :)
+            </element>
+        </list>
+        
+    </action>
+    
+    <action title="Harden Microsoft Internet Explorer" anchor="ie">
+        Even though you shouldn't use IE, there are times when you will have to
+        probably it.  For these situations, it should be hardened as much as
+        possible.
+        <list>
+            <element>
+                Install the Google toolbar as it will block popups.  This will
+                limit the number of Phishing dialog boxes that will popup, which
+                if clicked on could install malware of some kind.
+            </element>
+        </list>
+    </action>
+    
+    <action title="Harden Firefox" anchor="firefox">
+        Disable support for Java.  You can enable for each time you need it,
+        as you need it.
+    </action>
+    
+    <action title="Clean up startup programs in the registry" anchor="registry">
+        Not sure what to include/not include, bug geezle HP boxes seem
+        to come with alot of stuff.
+    </action>
+    
+    <action title='Learn how to be a "smart surfer"' anchor="smart_surfer">
+        Outline how to do the following:
+        <list>
+            <element>Downloading</element>
+            <element>Clicking</element>
+            <element>Email</element>
+            <element>Phishing</element>
+        </list>
+    </action>
+    
+    <action title="Specific software settings" anchor="specific_software_settings">
+        
+    </action>
+    
+    <action title="Antivirus software" anchor="antivirus">
+        
+    </action>
+
+    <!--
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->
+</guide>

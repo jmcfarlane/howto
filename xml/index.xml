@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/toc.xsl"?>
+<files title="Table of Contents">
+  <file path="apache-openssl.xml" />
+  <file path="bash-cheatsheet.xml" />
+  <file path="computer-setup-windows.xml" />
+  <file path="emacs.xml" />
+  <file path="gentoo-dmcrypt-luks.xml" />
+  <file path="gentoo-hardened.xml" />
+  <file path="gentoo-install.xml" />
+  <file path="gentoo-kernel-upgrade.xml" />
+  <file path="gentoo-kernel.xml" />
+  <file path="gentoo-keychain.xml" />
+  <file path="gentoo-monitoring.xml" />
+  <file path="gentoo-mssql-freetds.xml" />
+  <file path="gentoo-php-mysql.xml" />
+  <file path="gentoo-portage.xml" />
+  <file path="gentoo-postgres-install.xml" />
+  <file path="gentoo-postgres-replication-native.xml" />
+  <file path="gentoo-subversion.xml" />
+  <file path="git.xml" />
+  <file path="irssi.xml" />
+  <file path="linux-reiser.xml" />
+  <file path="ms_annoying.xml" />
+  <file path="openoffice-postgresql.xml" />
+  <file path="openoffice-templates.xml" />
+  <file path="package-manager-cheatsheet.xml" />
+  <file path="python-matplotlib.xml" />
+  <file path="python_guide_for_vb_cats.xml" />
+  <file path="screen.xml" />
+</files>

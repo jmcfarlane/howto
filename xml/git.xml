@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="07/16/2007">
+  <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+  <abstract title="Git - the stupid content tracker">
+    Git is the scm system developed by Linus Torvalds.  It is a
+    distributed system designed initially for use with the Linux
+    kernel. 
+  </abstract> 
+  <convention><i>scm</i> = Source Control Management</convention>
+  <change date="07/16/2007 @ 23:30">
+    Added steps for fetching file or dir by version, and fetching
+    what has changed recently
+  </change>
+  <change date="12/01/2007 @ 11:38">Added git log -r --name-status</change>
+  <change date="06/07/2008 @ 09:20">
+    Added info on global config, sharing, and a few random tips
+  </change>
+  <change date="08/09/2008 @ 01:11">
+    Added config setting to only use a pager when needed (Thanks jw)
+  </change>
+   
+  <action title="Installation" anchor="install">
+    Git is really easy to install on Gentoo:
+    <code>user# sudo emerge -a dev-util/git</code>
+    I would guess a quick <lt>apt-get install git</lt> would work on
+    Debian based systems, and good luck for you Fedora cats out there.
+  </action>
+
+  <action title="Introduction" anchor="intro">
+    Git is a scm using a distributed model.  This is very different
+    than most scm's which use a centralized model.  The basic
+    difference being that with Git there is no "server" that holds the
+    repository.  Each person has a copy of the entire repository, and
+    each copy is just as "official" as any other.
+    <p>
+      This might not sound very different than the centralized model,
+      but it really makes things alot different.  I'm personally still
+      trying to get used to it.
+    </p>
+  </action>
+
+  <action title="Set global configuration" anchor="git-global">
+    Git keeps track of configuration settings both at the repository
+    level, and at the user level.  Here's how I recommend setting up
+    your global configuration, as you will probably want these [sweet]
+    settings for every repository you have:
+    <code>
+user# git config --global user.name "Your Name"
+user# git config --global user.email your@email.com
+
+<cmt># You do want your shell to look sweet... don't you?</cmt>
+user# git config --global color.diff auto
+user# git config --global color.status auto
+user# git config --global color.branch auto
+
+<cmt># Global ignores is another sweet feature</cmt>
+user# git config --global core.excludesfile ~/.gitignore
+
+<cmt># Only use a pager when there's more than one page</cmt>
+<cmt># This is only for git >= 1.5.6.4</cmt>
+user# git config --global core.pager "less -FRSX"
+
+<cmt># Here's an example gitignore file</cmt>
+user# cat &#60;&#60;EOF &#62; ~/.gitignore
+*.pyc
+*.pyo
+*.swo
+*.swp
+~*
+
+EOF
+    </code>
+  </action>
+
+  <action title="You're first repository" anchor="first-repo">
+    Let's just jump right in.  Let's say you want to work on a little
+    Python project that tests your knowledge of services and the tcp
+    ports they use.  We'd start off by doing something like this:
+    <code>
+user# mkdir svctester
+user# cd svctester
+user# touch setup.py svctester.py Changelog
+    </code>
+    Now we want to place this project under version control:
+    <code>
+user# git init      <cmt># Initialize a new repository</cmt>
+user# git add .     <cmt># Add all files to the index</cmt>
+user# git status    <cmt># Look at what is about to be commited</cmt>
+user# git commit -a <cmt># Commit the changes</cmt>
+<cmt>
+# Next your default editor will open. Add your commit message and save the
+# file to complete the commit.
+</cmt>
+    </code>
+    Job well done, you now have your first Git repository.  Let's take
+    a second and look at what happened.
+    <code>
+user# ls -1a
+<cmt>.
+..
+.git
+Changelog
+setup.py
+svctester.py
+</cmt>
+    </code>
+    What you'll see is your three code files, and a <lt>.git</lt>
+    directory.  This <lt>.git</lt> directory is known as the
+    <em>repository</em>.  The really cool thing [unlike svn] is that
+    this directory holds all of the Git's meta data.  This means that
+    if you create directories inside your codebase, they do not have
+    hidden <lt>.git</lt> directories inside them.  This is very
+    differnet than svn where you find your source code littered with
+    <lt>.svn</lt> directories.
+  </action>
+        
+  <action title="You're first branch" anchor="first-branch">
+    Something you'll learn about Git is that it's meant to make
+    branching easy, really easy.  First let's look to see what
+    branches we have already:
+    <code>
+user# git branch
+<cmt>* master</cmt>
+    </code>
+    This is telling you that currently you have one branch named
+    <lt>master</lt>.  Let's create another one:
+    <code>user# git branch get-services</code>
+    What this did was create a new branch inside the repository based
+    on the master brach, but it did not do anything to your working
+    copy.
+    <p>
+      Now let's switch to our new branch:
+      <code>user# git checkout get-services</code>
+    </p>
+  </action>
+
+  <action title="Commit work and merge branch into the master branch"
+          anchor="first-merge">
+    Let's go ahead and make some changes to our <lt>get-services</lt>
+    branch:
+    <code>
+user# echo "svc = open('/etc/services', 'r').readlines()" >> svctester.py
+user# echo "svc = [s.strip() for s in svc]" >> svctester.py
+    </code>
+    Now we will commit the changes to the branch we are currently in,
+    the <lt>get-services</lt> branch:
+    <code>
+user# git commit -a -m "- Added svc list to hold services"
+user# git checkout master
+user# git merge get-services
+user# git log
+<cmt>
+commit cfc176c947970bd5e890905f3486429a7d4ee8eb
+Author: John McFarlane &#60;john.mcfarlane@rockfloat.com&#62;
+Date:   Sun Jun 3 17:59:16 2007 -0400
+
+- Added svc list to hold services
+
+commit 00bb22909b4c0aeff1ffb2b3a0fc335a88ee68a9
+Author: John McFarlane &#60;john.mcfarlane@rockfloat.com&#62;
+Date:   Sun Jun 3 17:52:19 2007 -0400
+
+- Initial commit
+</cmt>
+    </code>
+    Clean house and delete our branch as we're finished with that
+    task:
+    <code>user# git branch -d get-services</code>
+    Now let's look at our handywork:
+    <code>user# gitview</code>
+    <link uri="git-first-merge.png">
+      <img uri="git-first-merge_small.png" />
+    </link>
+  </action>
+
+  <action title="Explore what exactly happens when you switch branches"
+          anchor="switching-detail">
+    With Git it's very important to understand what's happening.  As a
+    tool it provides you with a lot more control than svn or cvs.  In
+    fact you can completely destroy yourself if you're not careful.
+    So let's spend some time looking at what's really happening.
+    <pb/>
+    Create a new branch to capture the user's input:
+    <code>
+user# git branch get-userinput
+user# git checkout get-userinput
+    </code>
+    Now add some code to get the user's input:
+    <code>
+user# echo "input = raw_input('What port is smtp: ')" >> svctester.py
+    </code>
+    So now you wonder if it would be better to actually start by
+    getting a random service out of our list, so you can use it as
+    part of the question.  To do this you create a branch for that
+    purpose:
+    <code>
+user# git branch get-randomservice
+user# git checkout get-randomservice
+    </code>
+    Out of curiosity you check to see the status of things:
+    <code>git status
+<cmt>
+# On branch get-randomservice
+# Changed but not updated:
+#   (use "git add &#60;file&#62;..." to update what will be committed)
+#
+#       modified:   svctester.py
+#
+no changes added to commit (use "git add" and/or "git commit -a")
+</cmt>
+    </code>
+    What the heck?  Why does svctester.py seem to have changes made to
+    it?  We didn't make any changes to this file in this branch yet?
+    Here's the deal.  Uncommited changes are visible to all branches.
+    This means when you switch from one branch to another, new or
+    modified files will always be in your working copy.
+    <tip>
+      When working with branches, always check which branch you are
+      currently in before doing anything that changes the repository.
+    </tip>
+    So what this means, is that we should also see the same thing if
+    we look at the <lt>status</lt> from the master branch:
+    <code>
+user# git checkout master
+user# git status
+<cmt>
+# On branch get-randomservice
+# Changed but not updated:
+#   (use "git add &#60;file&#62;..." to update what will be committed)
+#
+#       modified:   svctester.py
+#
+no changes added to commit (use "git add" and/or "git commit -a")
+</cmt>
+    </code>
+    But since this rule only applies to new and modified files, once
+    the change is commited, it should not be visible to other
+    branches:
+    <code>
+user# git checkout get-userinput
+user# git commit -a -m '- Capture user input on service question'
+user# git checkout master
+user# git status
+<cmt>
+# On branch master
+nothing to commit (working directory clean)
+</cmt>
+    </code>
+  </action>
+
+  <action title="Howto compare branches" anchor="compare-branches">
+    At this point we have three branches:
+    <code>
+user# git branch
+<cmt>
+get-randomservice
+get-userinput
+* master
+</cmt>
+    </code>
+    So let's see what changes would happen if we were too move changes
+    from the <lt>get-userinput</lt> branch into the <lt>master</lt> branch.
+    <code>
+user# git diff master..get-userinput
+<cmt>
+diff --git a/svctester.py b/svctester.py
+index 3e98f31..8dd13a5 100644
+--- a/svctester.py
++++ b/svctester.py
+@@ -1,2 +1,3 @@
+svc = open('/etc/services', 'r').readlines()
+svc = [s.strip() for s in svc]
++input = raw_input('What port is smtp: ')
+</cmt>
+    </code>
+    What we just did is a bit confusing:
+    <lt>master..get-userinput</lt>.  What exactly did that do?
+    Essentially when you use the <i>double dot</i> notation you're
+    asking Git to tell you the difference between your stuff (the
+    first branch) and somethign else (the second).  Because of this...
+    the diff shows the changed line with a <lt>+</lt> sign in front of
+    it.  If we had used: <lt>get-userinput..master</lt> it would have
+    put a <lt>-</lt> sign in front of it.
+    <tip>
+      Remember when using <lt>git diff</lt> to always put the thing to
+      receive the changes as the first part of the <i>double dot</i>
+      notation.
+    </tip>
+    Let's go ahead and merge the changes into the master, and move on
+    to getting the random service:
+    <code>
+user# git checkout master
+user# git merge get-userinput
+user# git branch -d get-userinput  <cmt># Clean house</cmt>
+    </code>
+    Take a look at our handy work:
+    <code>user# gitview</code>
+    <link uri="git-second-merge.png">
+      <img uri="git-second-merge_small.png" />
+    </link>
+    Now for those of you who have really strong attention to detail,
+    you might have noticed something odd there.  Why does the
+    <lt>get-randomservice</lt> branch show up next to the second
+    commit?  The answer is this: Next to each commit Git will show all
+    of the braches that were present at the time of the commit, and
+    still exist.  This means that now if we delete the
+    <lt>get-randomservice</lt> branch, it won't show up in gitview
+    anymore.
+    <code>user# git branch -d get-randomservice get-userinput</code>
+  </action>
+
+  <action title="How to shelve a branch" anchor="shelving">
+    Once upon a time I reviewed Microsoft's successor to SourceSafe
+    named <i>Team Foundation Server</i>.  I was complete poo.  Really,
+    I managed to destroy my project in about 5 minutes.  Though as
+    much as I hated it, it did have one nice feature that I've not yet
+    seen elsewhere (though I've only used svn and cvs).  The feature
+    wasa called "shelving" and it essentially allowed you to simply
+    push your code onto a shelf, so you could pick it up later.  It
+    was a really handy feature.
+    <pb/>
+    With Git you can do this pretty easily, here's how:
+    <code>
+user# git branch experiment
+user# git checkout experiment
+user# echo "Testing with Git shelving" > testing
+user# echo "for s in svc: print s" >> svctester.py
+    </code>
+    So now you have a new branch, and you've made some changes to it.
+    But if you switch to another branch, your changes are visible.
+    Let's shelve it for later:
+    <code>
+user# git add .
+user# git commit -a -m "Shelving - Added print of svc and a test file"
+    </code>
+    Now you won't see those two changes anywhere, but inside the
+    <lt>experment</lt> branch.  Now, when you're ready to resume your
+    work you do this:
+    <code>
+user# git checkout experiment
+user# git reset --soft HEAD^
+    </code>
+    You are exactly where you were prior to shelving, pretty sweet.
+    What happened was actually quite simple.  We committed the
+    changes, and later rolled the commit back.  Because this process
+    works by exploiting a commit, it is subject to commit rules.
+    Meaning you must add unversioned files to the index before you
+    commit if you want them shelved.
+    <tip>
+      If you want to save your work for later, don't forget to use
+      <lt>git add .</lt> before you commit [and later reset].
+    </tip>
+    Go ahead and shelve again for later:
+    <code>
+user# git commit -a -m "Shelving - Added print of svc and a test file"
+    </code>
+    <tip>
+      Recent versions of Git include the ability to
+      <lt>stash</lt>.  It's pretty interesting, you should check
+      it out.
+    </tip>
+  </action>
+
+  <action title="How do you publish a repository for other users?"
+          anchor="remote-repo-old-school">
+    Even though Git is a distributed system, it's still very nice to
+    have a single place where commits happen.  There are two main ways
+    this happens:
+    <list>
+      <element>Pushing to a remote repository</element>
+      <element>Asking others to pull from your repo</element>
+    </list>
+
+    Let's quickly go over the basic flow of pushing, as it's the work
+    flow that feels most natural to those [smart people] migrating
+    from tools like svn/cvs/p4.
+    <br/>
+    Here's how you would share a scripts repository:
+    <code>
+<cmt># Create a home for all published repositories</cmt>
+user# sudo mkdir /var/git
+
+<cmt># Give users in the <lt>gitusers</lt> group write access</cmt>
+user# sudo groupadd -f gitusers
+user# sudo chown -R :gitusers /var/git
+
+<cmt># Add people to the <lt>gitusers</lt> group</cmt>
+user# sudo gpasswd -a jmcfarlane gitusers
+user# sudo gpasswd -a yourfriend gitusers
+
+<cmt># Export a repository</cmt>
+user# git clone --bare /path/to/scripts-repo/.git /var/git/scripts.git
+
+<cmt># Create a <b>post commit hook</b> to maintain permissions</cmt>
+user# cd /var/git/scripts.git/hooks
+user# cp post-commit post-commit.ORIG
+user# echo "chown -R :gitusers /var/git/scripts.git" &#62;&#62; post-commit
+user# chmod +x post-commit
+
+<cmt># Now someone can clone your newly published repo</cmt>
+friend# git clone ssh://hostname:/var/git/scripts.git
+
+<cmt># Let's go thru a super fast change process  :)</cmt>
+friend# git checkout -b cruft
+friend# echo "foo-code" > cruft.bash
+friend# git add .
+friend# git commit -m "Initial commit of cruft.bash"
+friend# git checkout master <cmt># Never edit files here directly</cmt>
+friend# git merge cruft <cmt># Pull in my changes</cmt>
+friend# git push <cmt># Push my changes to the server</cmt>
+friend# git branch -d cruft <cmt># Delete little branches when you can</cmt>
+
+<cmt> # Pretend you already have a clone of the server too</cmt>
+user# cd ~/my/local/cloned/copy/of/scripts
+user# git branch
+
+<cmt># If I'm NOT on master, and have outstanding changes</cmt>
+user# git add .
+user# git commit -m "Shelving my commits to pull from upstream"
+
+<cmt># Pull down the new changes (from my friend)</cmt>
+user# git checkout master
+user# git pull
+
+<cmt># Go back to my branch, integrate the changes, and keep working</cmt>
+user# git checkout mybranch
+user# git rebase master <cmt># This does all the magic</cmt>
+user# git reset HEAD^ <cmt># Unshelf</cmt>
+user# git log log -n 1 <cmt># Validate my friend's change</cmt>
+user# git status <cmt># Damn that's sweet!</cmt>
+    </code>
+  </action>
+
+  <action title="How to revert/undo changes" anchor="revert">
+    I'm a huge fan of <lt>svn revert</lt>.  Here's how you do it in
+    Git.  Let's add some code:
+    <code>
+user# git checkout -b revert <cmt># Shorthand to create and switch</cmt>
+user# mkdir test
+user# echo "print 'test'" > test/test.py
+user# git add .
+user# git commit -a -m "Initial import of unit tests"
+    </code>
+    Now let's make a few changes:
+    <code>
+user# echo "print 'wee'" >> test/test.py
+user# mv test/test.py test/testing.py
+    </code>
+    Now let's revert those changes:
+    <code>git checkout test</code>
+    This will leave test/testing as an unversioned file that you need
+    to manage yourself.  If you really want to undo all changes you
+    could just do:
+    <code>
+user# rm -rf test
+user# git checkout test
+    </code>
+  </action>
+  <action title="How to retrieve a previous revision of a file or directory"
+          anchor="cat">
+    Svn users are familar with <lt>svn cat</lt>.  With git you fetch a
+    previous version like this:
+    <code>
+user# git show HEAD^^^:test/test.py
+    </code>
+    The command takes the usual style of revision, meaning you can use
+    any of the following:
+    <list>
+      <element>
+        <lt>HEAD</lt> + x number of <lt>^</lt> characters
+      </element>
+      <element>The SHA1 hash of a given revision</element>
+      <element>
+        The first few (maybe 5) characters of a given SHA1 hash
+      </element>
+    </list>
+    <tip>
+      It's important to remember that when using <lt>git show</lt>
+      always specify a path from the root of the repository, not your
+      current directory position.
+    </tip>
+  </action>
+
+  <action title="How to see what changed since a given date"
+          anchor="whatchanged">
+    Often you need to see what has changed in the last few days.  Git
+    is amayzingly good at answering such a request.  Any of the
+    following are perfectly valid:
+    <code>
+user# git whatchanged --since="yesterday"
+user# git whatchanged --since="7/8/2007"
+user# git whatchanged --since="yesterday at 4pm"
+user# git whatchanged --since="last friday after 3pm"
+user# git whatchanged --since="3 days ago"
+    </code>
+  </action>
+
+  <action title="How to view files changed per commit"
+          anchor="fileschanged">
+    For you svn users out there, you might be looking for how to also
+    include the list of files changed with each commit, which for you
+    is: <lt>svn log -v</lt>.  With git you do it like so:
+    <code>user# git log -r --name-status</code>
+    The only tricky part, is that [<i>currently</i>]
+    <lt>--name-status</lt> is only in the git log man page as an
+    example, it's not actually documented.
+  </action>
+
+  <action title="How do you compare your changes with another branch?"
+          anchor="diff-branch">
+   If you want to compare your local branch with another one, just
+   pass it's name to diff:
+   <code>user# git diff otherbranch</code>
+  </action>
+
+  <action title="How do you create a post-commit hook?"
+          anchor="post-commit-hook">
+    They are pretty easy.  See the section on
+    <link uri="#remote-repo-old-school">how to publish</link>
+    a repository.
+  </action>
+</guide>

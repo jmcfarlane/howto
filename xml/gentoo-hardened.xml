@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="09/28/2006">
+    <author email="john.mcfarlane@rockfloat.com">john.mcfarlane</author>
+    <abstract title="Gentoo - hardened setup">
+        This document is intended to help those unfamiliar with the Hardended
+        Gentoo Project to both understand it's purpose, and learn the basics
+        of it's implemenation.
+    </abstract>
+    <convention>This howto assumes you're running the 2.6 kernel</convention>
+    <change date="09/28/2006 @02:00">Remove -a switch from toolchain rebuild, added info on PaX and SSP</change>
+    <change date="09/29/2006 @ 22:36">Add step to update System.map, don't emerge paxctl twice  :)</change>
+    
+    <action title="What is the Hardened Gentoo Project?" anchor="about">
+    	<i>
+    		"Hardened Gentoo is a project which oversees the research,
+    		implementation, and maintainence of security oriented
+    		projects for Gentoo Linux. [They] are a team of very
+    		competent individuals dedicated to bringing advanced
+    		security to Gentoo with a number of subprojects."
+    	</i>
+    	<p>
+    		<i>
+    			"Hardened Gentoo's purpose is to make Gentoo viable for
+    			high security, high stability production server
+    			environments. This project is not a standalone project
+    			disjoined from Gentoo proper; it is intended to be a
+    			team of Gentoo developers which are focused on
+    			delivering solutions to Gentoo that provide strong
+    			security and stability. These solutions will be
+    			available in Gentoo once they've been tested for
+    			security and stability by the Hardened team."
+    		</i>
+    	</p>
+    	<p>
+    		Above quoted from:
+    		<link uri="http://hardened.gentoo.org">
+    			http://hardened.gentoo.org
+    		</link>
+    	</p>
+    </action>
+    
+    <action title="Where to I begin?" anchor="begin">
+    	You'll want to make sure your Portage snapshot includes the latest
+    	hardened profile stuffs:
+    	<code>
+root# emerge --sync
+    	</code>
+    	You'll also probably want to read thru the Gentoo Hardened faq:
+    	<p>
+    		<link
+    			uri="http://www.gentoo.org/proj/en/hardened/hardenedfaq.xml">
+    			http://www.gentoo.org/proj/en/hardened/hardenedfaq.xml
+    		</link>
+    	</p>
+    </action>
+    
+    <action title="Switch to the hardened profile" anchor="profile">
+    	There is a special profile for use with Hardened Gentoo.  It's very
+    	similar to the <lt>server</lt> and <lt>desktop</lt> profiles, only this
+    	one has security in mind.
+    	<p>
+    	Here's how you switch:
+    	<code>
+root# rm /etc/make.profile  <cmt>#DO NOT INCLUDE A TRAILING SLASH HERE!</cmt>
+root# ln -s /usr/portage/profiles/hardened/x86/2.6 /etc/make.profile
+root# env-update
+root# source /etc/profile
+    	</code>
+    	</p>
+    </action>
+    
+    <action title="Recompile system using hardened toolchain" anchor="toolchain">
+    	Now that you are using the hardened profile, you need to recompile
+    	your entire system to take advantage of it:
+    	<code>
+root# screen  <cmt># Optional, but highly recommended</cmt>
+root# emerge binutils gcc virtual/libc
+root# emerge -e world
+    	</code>
+    	<tip>
+    		At the time of this writing, you'll notice that <lt>gcc-4.x.x</lt>
+    		is not supported.
+    	</tip>
+    </action>
+    
+    <action title="Switch to a hardened kernel" anchor="kernel">
+    	You'll also want to run a kernel that's patched to support features
+    	needed by things like Pax (<i>more on this later</i>).
+    	<p>
+    	Here's how to roll a hardened kernel:
+    	<code>
+root# emerge -a hardened-sources
+root# cd /usr/src
+root# cp linux/.config kernel.config.backup
+root# rm linux
+root# ln -s linux-2.6.16-hardened-r11 linux
+root# cp kernel.config.backup linux/.config  <cmt># Optional</cmt>
+root# cd linux
+root# make oldconfig  <cmt># Optional, use to clean up from your .config backup</cmt>
+root# make menuconfig
+	<cmt># Make sure to select the following, along with your normal stuff</cmt>
+	[*] Enable various PaX features
+	
+	PaX Control ->
+	 [ ] Support soft mode
+	 [*] Use legacy ELF header marking
+	 [*] Use ELF program header marking
+	     MAC system integration (none)  --->
+	
+	Non-executable page ->
+	 [*] Enforce non-executable pages
+	 [*]   Paging based non-executable pages
+	 [*]   Segmentation based non-executable pages
+	 [*] Emulate trampolines
+	 [*] Restrict mprotect()
+	 [ ]   Disallow ELF text relocations
+	
+	Address Space Layout Randomization ->
+	 [*] Address Space Layout Randomization
+	 [*]   Randomize kernel stack base
+	 [*]   Randomize user stack base
+	 [*]   Randomize mmap() base
+	 [*]     Randomize ET_EXEC base
+
+root# make &amp;&amp; make modules_install
+root# mount /boot
+root# cp arch/i386/boot/bzImage /boot/kernel-2.6.16-hardened-r11
+root# cp System.map /boot/System.map-2.6.16-hardened-r11
+root# cd /boot
+root# rm System.map
+root# ln -s System.map-2.6.16-hardened-r11 System.map
+<cmt># Update /boot/grub/grub.conf - nothing special just the normal stuff</cmt>
+root# grub-install --no-recheck --no-floppy /dev/<em>h</em>da  <cmt># hda/sda</cmt>
+root# reboot
+    	</code>
+    	</p>
+    	Once your system comes back up and you boot to your shiny new
+    	kernel, you'll be running the most basic of a hardened Gentoo setup.
+    	Next we will discuss the other essential components of a hardened
+    	system.
+    </action>
+    
+    <action title="PaX - Least privilege protections for memory pages" anchor="pax">
+    	PaX is one of the most important parts of a hardened system.  From
+    	the official Gentoo docs:
+    	<p>
+    		<i>
+    			"PaX is a patch to the Linux kernel that provides
+    			hardening in two ways.
+
+    			The first, ASLR (Address Space Layout Randomization)
+    			provides a means to randomize the addressing scheme of
+    			all data loaded into memory. When an application is
+    			built as a PIE (Position Independent Executable), PaX is
+    			able to also randomize the addresses of the application
+    			base in addition.
+
+    			The second protection provided by PaX is non-executable
+    			memory. This prevents a common form of attack where
+    			executable code is inserted into memory by an attacker.
+    			More information on PaX can be found throughout this
+    			guide, but the homepage can be found at
+    			<link uri="http://pax.grsecurity.net">
+    				http://pax.grsecurity.net
+    			</link>
+    			."
+    		</i>
+    	</p>
+    	Since we already built a kernel with PaX support, there isn't
+    	alot that needs to be done here. You will want a utility to aid
+    	in toggling protections on a per-executable basis:
+    	<code>
+root# emerge paxctl
+root# paxctl -h  <cmt># To see example usage</cmt>
+root# paxctl -v /usr/bin/python  <cmt># To view flags for a particular binary</cmt>
+    	</code>
+    	Optionally you can install <lt>chpax</lt> which sets some reasonable
+    	default settings:
+    	<code>
+root# emerge chpax
+root# rc-update add chpax default
+root# /etc/init.d/chpax start
+
+<cmt># These packages are also usefull</cmt>
+root# emerge pax-utils
+root# emerge paxtest
+    	</code>
+    	Once you have <lt>paxtest</lt> installed you can use it to test your
+    	setup:
+    	<code>
+root# paxtest blackhat
+
+<cmt>Executable anonymous mapping             : Killed</cmt>
+<cmt>Executable bss                           : Killed</cmt>
+<cmt>Executable data                          : Killed</cmt>
+<cmt>Executable heap                          : Killed</cmt>
+<cmt>Executable stack                         : Killed</cmt>
+<cmt>Executable anonymous mapping (mprotect)  : Killed</cmt>
+<cmt>Executable bss (mprotect)                : Killed</cmt>
+<cmt>Executable data (mprotect)               : Killed</cmt>
+<cmt>Executable heap (mprotect)               : Killed</cmt>
+<cmt>Executable stack (mprotect)              : Killed</cmt>
+<cmt>Executable shared library bss (mprotect) : Killed</cmt>
+<cmt>Executable shared library data (mprotect): Killed</cmt>
+<cmt>Writable text segments                   : Killed</cmt>
+<cmt>Anonymous mapping randomisation test     : 16 bits (guessed)</cmt>
+<cmt>Heap randomisation test (ET_EXEC)        : 13 bits (guessed)</cmt>
+<cmt>Heap randomisation test (ET_DYN)         : 25 bits (guessed)</cmt>
+<cmt>Main executable randomisation (ET_EXEC)  : 16 bits (guessed)</cmt>
+<cmt>Main executable randomisation (ET_DYN)   : 17 bits (guessed)</cmt>
+<cmt>Shared library randomisation test        : 16 bits (guessed)</cmt>
+<cmt>Stack randomisation test (SEGMEXEC)      : 23 bits (guessed)</cmt>
+<cmt>Stack randomisation test (PAGEEXEC)      : No randomisation</cmt>
+<cmt>Return to function (strcpy)              : Vulnerable</cmt>
+<cmt>Return to function (memcpy)              : Vulnerable</cmt>
+<cmt>Return to function (strcpy, RANDEXEC)    : Killed</cmt>
+<cmt>Return to function (memcpy, RANDEXEC)    : Killed</cmt>
+<cmt>Executable shared library bss            : Killed</cmt>
+<cmt>Executable shared library data           : Killed</cmt>
+    	</code>
+    	<p>
+    		REFERENCE:
+    		<link
+    			uri="http://www.gentoo.org/proj/en/hardened/pax-quickstart.xml">
+    			http://www.gentoo.org/proj/en/hardened/pax-quickstart.xml
+    		</link>
+    		<br />
+    		REFERENCE:
+    		<link uri="http://en.wikipedia.org/wiki/PaX">
+    			http://en.wikipedia.org/wiki/PaX
+    		</link>
+    	</p>
+    </action>
+    
+    <action title="SSP - Stack Smashing Protector" anchor="ssp">
+    	SSP is a really cool GCC extension designed to prevent buffer
+    	overflow attacks where possible. The project describes it as:
+    	<i>
+    		<p>
+    			"It is a GCC (Gnu Compiler Collection) extension for
+    			protecting applications from stack-smashing attacks.
+    			Applications written in C will be protected by the
+    			method that automatically inserts protection code into
+    			an application at compilation time. The protection is
+    			realized by buffer overflow detection and the variable
+    			reordering feature to avoid the corruption of pointers.
+    			The basic idea of buffer overflow detection comes from
+    			StackGuard system."
+    		</p>
+    		<p>
+    			"The novel features are (1) the reordering of local
+    			variables to place buffers after pointers to avoid the
+    			corruption of pointers that could be used to further
+    			corrupt arbitrary memory locations, (2) the copying of
+    			pointers in function arguments to an area preceding
+    			local variable buffers to prevent the corruption of
+    			pointers that could be used to further corrupt arbitrary
+    			memory locations, and the (3) omission of
+    			instrumentation code from some functions to decrease the
+    			performance overhead. "
+    		</p>
+    	</i>
+    	<p>
+    		<em>The good news is...</em>
+    		your rig is already setup to use it. The hardened profile
+    		takes care of that for you :)
+    	</p>
+    	<p>
+    		REFERENCE:
+    		<link uri="http://www.trl.ibm.com/projects/security/ssp/">
+    			http://www.trl.ibm.com/projects/security/ssp/
+    		</link>
+    		<br/>
+    		REFERENCE:
+    		<link
+    			uri="http://en.wikipedia.org/wiki/Stack-Smashing_Protector">
+    			http://en.wikipedia.org/wiki/Stack-Smashing_Protector
+    		</link>
+    	</p>
+    </action>
+    
+    <!--
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->    
+</guide>

@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="01/17/2004">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Gentoo - base installation guide">
+        This document is a simplified version of the official gentoo
+        installation guide, with my personal choices.
+    </abstract>
+    <convention>This howto assumes you are installing on an IDE disk drive</convention>
+    <convention>This howto assumes you will be using the grub boot manager</convention>
+    <convention>This howto assumes that reiserfs is your preferred file system</convention>
+    <convention>This howto assumes you are <literal>very patient</literal></convention>
+    <convention>
+        This howto assumes you realize that knowing how to install gentoo drives chics wild!
+    </convention>
+    
+    <change date="07/04/2005 @ 15:00">Overall rework for updates with 2005.0</change>
+    <change date="07/06/2005 @ 20:49">
+        Fixed nasty typo, in grub.conf I had root=/dev/sda1 (should be sda3)
+    </change>
+    <change date="07/06/2005 @ 21:00">
+        Added steps for modules.autoload.d, installing dhcpcd, and sudo
+    </change>
+    <change date="11/02/2005 @ 22:00">
+        Updated formatting a bit, added cfdisk as an fdisk alternative
+    </change>
+    <change date="11/02/2005 @ 22:15">
+        Made use flags more realistic, removed quicktime - no clue how that got there
+    </change>
+    <change date="11/23/2005 @ 13:07">Changed fstab to noauto for /boot</change>
+    <change date="12/11/2005 @ 14:00">Moved the kernel stuff to a dedicated howto</change>
+    <change date="12/12/2005 @ 23:30">Separated Athlon/Xeon, networking, formatting tweaks</change>
+    <change date="01/03/2006 @ 12:09">Added ntp-client to the default runlevel</change>
+    <change date="06/24/2006 @ 01:21">Updates for 2006.0</change>
+    <change date="09/03/2006 @ 00:40">
+    	Added lspci, dhclient, recommended ebuilds, updated for 2006.1
+    </change>
+    <change date="04/08/2007 @ 18:53">Added dev mount per change in the Gentoo handbook</change>
+    
+    <action title="Download installation media" anchor="media">
+        Download the appropriate installation media: livecd-i686-installer-2006.1.iso
+        <br/>
+        Here are a few solid links for the Cincinnati, Ohio area:
+        <list>
+            <element>
+                <link uri="ftp://ftp.ussg.iu.edu/pub/linux/gentoo/releases/x86/2006.1/livecd/livecd-i686-installer-2006.1.iso">
+                    Indiana University
+                </link>
+            </element>
+        </list>
+    </action>            
+    
+    <action title="Create a bootable cd from the installation media" anchor="burn">
+        root# cdrecord dev=/dev/hdc livecd-i686-installer-2006.1.iso
+    </action>
+    
+    <action title="Boot from the universal cd" anchor="boot_from_livecd">
+        Booting from the universal cd is really straightforward.  Stick the cd
+        in, and turn restart your computer.  Sometimes you need to update the
+        bios to specify the cdom to boot prior to the disk drive, this prevents
+        the bios from simply skipping the cdrom.
+        <tip>
+            If you're install involves SCSI devices, you need to boot the livecd
+            with the doscsi argument.  To do this boot off the livecd as usual,
+            and when you get to the prompt, type: <literal>gentoo doscsi</literal>.
+        </tip>
+    </action>
+    
+    <action title="Start sshd if you want to work from another computer" anchor="sshd">
+    	Sometimes it's nice to perform the installation from another computer that
+    	has a graphical desktop for reading the documentation.  To do this start
+    	up sshd:
+    	<code>
+# passwd
+New password: <cmt>(Enter your new password)</cmt>
+Re-enter password: <cmt>(Re-enter your password)</cmt>
+# /etc/init.d/sshd start
+# ifconfig | grep inet
+    	</code>
+    	
+    	Now you can connect from another computer using (xterm, rxvt, putty, etc):
+    	<code>
+user# ssh root@IP-ADDRESS
+    	</code>
+    	using the IP address you saw in the previous step, something like
+    	<literal>1.2.3.4</literal>
+        
+        <tip>
+            If you don't have a "hot" network cable connected, you will not
+            see the network device <lt>eth0</lt> in the output of
+            <lt>ifconfig</lt>.  So make sure your network cable is hot before
+            you pull your head out trying to debug network card drivers.
+        </tip>
+    </action>
+    
+    <action title="Use fdisk to setup your partitions" anchor="fdisk">
+        <bold><important>
+            This is the step where data will be destroyed from
+            your disk.  Please stop if you are unsure that you want to continue.
+        </important></bold>
+        <br/><br/>
+        
+        At the console prompt startup fdisk
+        <code>
+livecd# fdisk /dev/sda
+        </code>
+        If for some reason fdisk doesn't work (happend to me with the 2005.1 Livecd
+        you might want to try cfdisk. It's a menu driven alternative, it's actually
+        quite nice!
+         <code>
+livecd# cfdisk /dev/sda
+        </code>
+        <list>
+            <element>Type <literal>p</literal> to view the current partitions.</element>
+            <element>Use <literal>d</literal> to delete each of the existing partitions</element>
+            <element>Do each of the following (each has # explanation of command):
+                <code>
+n       <cmt># Create a new partition</cmt>
+p       <cmt># This is a primary partition</cmt>
+1       <cmt># It's to be the first partition</cmt>
+        <cmt># Just hit enter to start at the first cylinder</cmt>
++64m    <cmt># This partition is to be 64 megs large</cmt>
+a       <cmt># Set the bootable flag</cmt>
+1       <cmt># On the first partition</cmt>
+
+n       <cmt># Create a new partition</cmt>
+p       <cmt># This is a primary partition</cmt>
+2       <cmt># It's to be the second partition</cmt>
+        <cmt># Just hit enter to start at the first cylinder</cmt>
++512m   <cmt># This partition is to be 512 megs large</cmt>
+t       <cmt># Alter the type of this partition</cmt>
+2       <cmt># Select the swap partition</cmt>
+82      <cmt># Set the type to "Linux Swap"</cmt>
+
+n       <cmt># Create a new partition</cmt>
+p       <cmt># This is a primary partition</cmt>
+3       <cmt># It's to be the second partition</cmt>
+        <cmt># Just hit enter to start at the first cylinder</cmt>
+        <cmt># Just hit enter to take all available space</cmt>
+        
+w       <cmt># Write to disk</cmt>
+q       <cmt># Quit to exit fdisk</cmt>
+                </code>
+            </element>
+        </list>
+        Now you have a shiney clean disk drive, ready to be formatted (yes, technically there
+        is still data on the drive, it's just inaccessable as the partitions were re-written.
+    </action>
+    
+    <action title="Create the file systems on the new partitions" anchor="fs">
+        <code>
+livecd# mkfs /dev/sda1        <cmt># Make boot ext2</cmt>
+livecd# mkreiserfs /dev/sda3  <cmt># Make root reiserfs</cmt>
+livecd# mkswap /dev/sda2      <cmt># Create the swap signature</cmt>
+        </code>
+    </action>
+    
+    <action title="Get the disk drive ready for use" anchor="ready_disk">
+        <code>
+livecd# swapon /dev/sda2
+livecd# mount /dev/sda3 /mnt/gentoo
+livecd# mkdir /mnt/gentoo/boot
+livecd# mount /dev/sda1 /mnt/gentoo/boot
+livecd# date mmddhhmmyyyy   <cmt>#Month Day Hour Minute Year</cmt>
+	</code>
+    </action>
+    
+    <action title="Setup the raw gentoo system on the new disk" anchor="stage3">
+        <code>
+livecd# cd /mnt/gentoo
+		</code>
+		<list>
+    		<element>
+    			For an <em>AMD Athlon</em>, <em>P3</em>, <em>P4</em>, or <em>Xeon</em> processor:
+				<code>
+livecd# wget ftp://ftp.ussg.iu.edu/pub/linux/gentoo/releases/x86/current/stages/stage3-i686-2006.1.tar.bz2
+livecd# tar -xvjpf stage3-i686-2006.1.tar.bz2
+				</code>
+    		</element>
+            <element>
+                For other arches, you'll need to get the appropriate stage3
+            </element>
+    	</list>
+
+Next download a fresh snapshot of portage
+		<code>
+livecd# wget http://gentoo.mirrors.pair.com/snapshots/portage-latest.tar.bz2
+livecd# tar -xvjf portage-latest.tar.bz2 -C /mnt/gentoo/usr
+        </code>
+    </action>
+    
+    <action title="Tweak /etc/make.conf to set compiler and packages settings" anchor="settings">
+		Verify the following settings in <literal>nano -w /mnt/gentoo/etc/make.conf</literal>
+    	<list>
+    		<element>
+    			For an <em>AMD Athlon</em> processor:
+				<code>
+CHOST="i686-pc-linux-gnu"
+CFLAGS="-march=athlon-tbird -O2 -pipe -fomit-frame-pointer"
+				</code>
+    		</element>
+    		<element>
+    			For an <em>Intel Xeon</em> or <em>P4</em> processor:
+				<code>
+CHOST="i686-pc-linux-gnu"
+CFLAGS="-march=pentium4 -O2 -pipe -fomit-frame-pointer"
+
+				</code>
+    		</element>
+    	</list>
+        Verify the following:
+        <code>
+CXXFLAGS="${CFLAGS}"
+USE="-X -gtk -kde -qt python postgres gd png jpeg xml truetype unicode"
+        </code>
+    
+    	See <link uri="http://www.gentoo.org/dyn/use-index.xml">here</link>
+        for a list of available USE flags.
+        
+         <br/><br/>
+             <tip>
+                 Once you have portage &gt;= 2.1 you can compile and
+                 download at the same time. Add this to make.conf:
+                 FEATURES="parallel-fetch"
+             </tip>
+    </action>
+
+    <action title="Set GENTOO_MIRRORS variable, SYNC server, and DNS server(s)" anchor="servers">
+        <code>
+livecd# mirrorselect -i -o >> /mnt/gentoo/etc/make.conf
+livecd# mirrorselect -i -r -o >> /mnt/gentoo/etc/make.conf
+livecd# cp -L /etc/resolv.conf /mnt/gentoo/etc/resolv.conf
+        </code>
+        <tip>
+        	If you need a unique <literal>/etc/resolv.conf</literal> make sure
+        	it looks something like this:
+        	<code>
+nameserver 10.0.0.1
+search hostname.com
+domain hostname.com
+        	</code>
+        </tip>
+    </action>
+
+    
+    <action title="Mount the new gentoo system" anchor="mount">
+        <code>
+livecd# mount -t proc none /mnt/gentoo/proc
+livecd# mount -o bind /dev /mnt/gentoo/dev
+livecd# chroot /mnt/gentoo /bin/bash
+root# env-update
+root# source /etc/profile
+root# export PS1="(chroot) $PS1"
+        </code>
+    </action>
+    
+    
+    
+    <action title="Set the time and install stuff you will want" anchor="userland">
+        <code>
+root# cp /usr/share/zoneinfo/EST5EDT /etc/localtime
+root# emerge --sync
+root# emerge -a gentoo-sources \
+        grub \
+        dhcp \
+        hotplug \
+        vixie-cron \
+        syslog-ng \
+        reiserfsprogs \
+        gentoolkit \
+        ntp \
+        screen \
+        vim
+	</code>
+	For anyone who's interested, I also keep a list of
+	<link uri="/board/thread_view/?s=recommended+ebuilds">
+		recommended ebuilds
+	</link>.
+	
+    </action>
+    
+    <action title="Compile a new kernel" anchor="kernel">
+    	See the dedicated Kernel howto <link uri="gentoo-kernel.xml">here</link>
+    </action>
+    
+    <action title="Configure networking" anchor="networking">
+    	Edit <literal>/etc/conf.d/net</literal> and add one of these:
+    	<code>
+<cmt># For DHCP</cmt>
+config_eth0=( "dhcp" )
+
+<cmt># For static IP using CIDR notation</cmt>
+config_eth0=( "192.168.0.7/24" )
+routes_eth0=( "default via 192.168.0.1" )
+
+<cmt># For static IP using netmask notation</cmt>
+config_eth0=( "192.168.0.7 netmask 255.255.255.0" )
+routes_eth0=( "default gw 192.168.0.1" )
+		</code>
+    </action>
+    
+    <action title="Setup machine specific settings, set startup options" anchor="startup">
+        <code>
+root# rc-update add hostname default
+root# rc-update add net.eth0 default
+root# rc-update add hotplug default
+root# rc-update add vixie-cron default
+root# rc-update add sshd default
+root# rc-update add syslog-ng default
+root# rc-update add ntpd default
+root# rc-update add ntp-client default
+	</code>
+	<tip>
+		It's highly recommended to add an entry into Root's crontab to run
+		daily to make sure your clock doesn't drift.
+		<code>
+# min   hour     day     month   dow     script-to-execute
+0       4,16     *       *       *       /etc/init.d/ntp-client restart > /dev/null 2>&#38;1</code>
+	</tip>
+	
+	<br/><br/>
+	Populate the computer's hostname to reflect your setup
+	<code>
+root# nano -w /etc/conf.d/hostname
+
+# Set to the hostname of this machine
+HOSTNAME="monkey"
+	</code>
+	
+	<code>
+root# nano -w /etc/conf.d/domainname
+
+# When setting up resolv.conf, what should take precedence?
+# If you wish to always override DHCP/whatever, set this to 1.
+OVERRIDE=1
+
+# To have a proper FQDN, you need to setup /etc/hosts and /etc/resolv.conf
+# properly (domain entry in /etc/resolv.conf, and FQDN in /etc/hosts).
+# 
+DNSDOMAIN="rockfloat.com"
+
+	</code>
+
+	<br/><br/>
+	Tell gentoo to load any necessary kernel modules at startup:
+	
+	<code>
+root# nano -w /etc/modules.autoload.d/kernel-2.6
+
+<cmt># Make the bottom look like this</cmt>
+# For example:
+# 3c59x
+
+e100
+
+root# modules-update	<cmt># This is similar to env-update, or rc-update kinda</cmt>
+	</code>
+    </action>
+    
+    <action title="Set the root password and add normal users" anchor="users">
+        <code>
+root# passwd root
+
+root# useradd -m -G users,audio -s /bin/bash foouser
+root# passwd foouser
+
+root# useradd -m -G users,audio,wheel,portage -s /bin/bash barsuperuser
+root# passwd barsuperuser
+	</code>
+
+	If you want any users to be able to admin the computer, you
+	might wanna use sudo:
+	<code>
+root# emerge app-admin/sudo
+root# visudo
+
+<cmt># Uncomment this line:</cmt>
+%wheel ALL=(ALL)	   ALL
+	</code>
+	This will let anyone in the wheel group execute any command
+	as root without being prompted for the root password.
+    </action>
+
+    <action title="Finish up" anchor="finish">
+        <code>
+root# exit
+livecd# cd
+livecd# umount -l /mnt/gentoo/boot /mnt/gentoo/proc /mnt/gentoo
+livecd# reboot
+	</code>
+    </action>
+    
+    <!-- 
+    <action title="Thinkflat automagic gentoo installation" anchor="scripted">
+    	I've has written a couple simple scripts in an effort to ease the
+		pain of the gentoo installation process.  The goal here isn't to turn it
+		into something different... but rather just a way to save keystrokes for
+		those already familar with the process.  If you have never installed
+		gentoo before, please don't use these scripts, but rather follow the 
+		official gentoo documentation.
+		<br/><br/>
+		Well, here it is...
+        <code>
+NOTE: the files below aren't published yet, so the commands below will not work
+      yet.  I'll try to get them finished  :)
+
+# 1. Boot to the universal livecd
+# 2. Run the first rockfloat script
+livecd# wget -O - http://rockfloat.com/blobs/public/python/rockfloat-python/shell/gentoo-installer.py
+	</code>
+    </action>
+     -->
+    
+    <action title="TIP: Instructions to get into a broken system" anchor="rescue">
+        If you happen to wind up with a broken system:
+        <list>
+            <element>You forgot something critical in the kernel, and thus
+                it won't boot
+            </element>
+            <element>You forgot the root password</element>
+        </list>
+        In these sad times, it's really handy to have a gentoo live-cd laying
+        around.  Simply boot to the cdrom, and perform the following:
+        <code>
+livecd# swapon /dev/sda2
+livecd# mount /dev/sda3 /mnt/gentoo
+livecd# mount /dev/sda1 /mnt/gentoo/boot
+livecd# mount -t proc none /mnt/gentoo/proc
+livecd# mount -o bind /dev /mnt/gentoo/dev
+livecd# chroot /mnt/gentoo /bin/bash
+root# env-update
+root# source /etc/profile
+root# export PS1="(chroot) $PS1"
+
+<cmt>*** Do whatever you need, such as fix your kernel or reset root's password ***</cmt>
+
+root# exit 
+livecd# cd
+livecd# umount /mnt/gentoo/boot /mnt/gentoo/proc /mnt/gentoo
+livecd# reboot
+
+        </code>
+    </action>
+    
+    <action title="TIP: Extra stuff that might be handy" anchor="tip_extra_stuff">
+    	Here are some common things you might look for:
+    	<code>
+/etc/conf.d/net                             <cmt># Network settings, like DHCP</cmt>
+/etc/modules.autoload.d/kernel-2.6          <cmt># Specify nic driver to load</cmt>
+/etc/conf.d/local.start                     <cmt># Arbitrary commands to execute at startup</cmt>
+/etc/init.d/net.eth0 restart                <cmt># Restart networking</cmt>
+/etc/make.conf                              <cmt># USE variables</cmt>
+/etc/conf.d/hostname                        <cmt># Computer hostname</cmt>
+/etc/conf.d/domainname                      <cmt># Computer domainname</cmt>
+/etc/exports                                <cmt># NFS shares</cmt>
+/etc/make.profile                           <cmt># Profiles: /usr/portage/profiles/default-linux/...</cmt>
+/etc/portage/package.keywords               <cmt># Set one ebuild to always install ~x86 or something</cmt>
+/etc/portage/package.mask                   <cmt># Prevent emerge -u world from upgrading something</cmt>
+/etc/apache2/*                              <cmt># Apache configuration settings</cmt>
+/var/log/emerge.log                         <cmt># Log file used by portage (what was last emerged)</cmt>
+~/.bashrc                                   <cmt># Bash settings per user</cmt>
+
+emerge -s wget                              <cmt># Search for wget</cmt>
+emerge -a wget                              <cmt># Install something, like wget</cmt>
+emerge -C wget                              <cmt># Uninstall something like wget</cmt>
+eix -s wget                                 <cmt># Search for wget (superior to emerge -s)</cmt>
+update-eix                                  <cmt># Update the eix index</cmt>
+equery files wget | grep bin                <cmt># Find binary for something installed, like wget</cmt>
+vipw                                        <cmt># Edit /etc/passwd</cmt>
+vigr                                        <cmt># Edit /etc/group</cmt>
+useradd                                     <cmt># Add new users</cmt>
+userdel                                     <cmt># Delete users and related files</cmt>
+usermod                                     <cmt># Modify a users account</cmt>
+rc-update                                   <cmt># Add/delete something like apache to startup</cmt>
+etc-update                                  <cmt># Update config files after a package upgrade</cmt>
+modules-update                              <cmt># Update modules after changing modules.autoload.d</cmt>
+visudo                                      <cmt># Edit the sudo config, who can do what basically</cmt>
+    	</code>
+    </action>
+
+    <!-- 
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->
+        
+</guide>

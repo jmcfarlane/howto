@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="08/08/2008">
+  <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+  <abstract title="Bash/shell - cheat sheet">
+    This howto is simply a place for me to keep all the little bash
+    tips and tricks that I need and use.  I hope you find them
+    valuable, please let me know if you have changes/fixes/additions.
+    My goal is to add one tip every few weeks.
+    <br/><br/>
+
+    <tip>
+      This howto is <b>not</b> exclusive to Bash.  The goal is simply
+      to have a single place to document all the things I forget and
+      need a quick reference for.  Because of this you'll also find
+      tips on things like Awk, Sed, Cut, and Sort - but the bulk will
+      probably be Bash.
+    </tip>
+  </abstract> 
+  <convention>
+    This howto revolves around the Bash shell.  If you are using
+    something like sh, zsh or whatever you probably want to be looking
+    somewhere else.
+  </convention>
+  <change date="08/08/2008 @ 01:45">Initial creation</change>
+            
+   
+  <action title="Process substitution" anchor="process-substitution">
+    Bash can create special files from the output of commands.  This
+    takes a little getting used to, but can be extremely valuable.
+    Here are a few examples:
+    <code>
+<cmt># Cat out the current directory listing</cmt>
+user# cat &#60;(ls)
+
+<cmt># Cat out the directory listing on another computer</cmt>
+user# cat &#60;(ssh some-computer ls)
+    </code>
+
+    Now you're probably thinking that's not so special.  Here's
+    something a little more interesing:
+    <code>
+<cmt># Graphically compare a directory listing on two computers</cmt>
+user# meld &#60;(ssh foo ls) &#60;(ssh bar ls)
+
+<cmt># Graphically compare /etc on two computers</cmt>
+user# meld &#60;(ssh foo tree /etc) &#60;(ssh bar tree /etc)
+    </code>
+  </action>
+
+  <action title="Brace expansion" anchor="brace-expansion">
+    If you ever find yourself typing commands that use long file
+    system paths as arguments, think about using brace expansion:
+
+    <code>
+<cmt># Create a backup of xorg.conf</cmt>
+user# sudo cp /etc/X11/xorg.conf{,.BACKUP}
+
+<cmt># Do a visual diff between your PostgreSQL config and a backup</cmt>
+root# meld /var/lib/postgresql/data/pg_hba.conf{.ORIG,}
+    </code>
+  </action>
+        
+</guide>

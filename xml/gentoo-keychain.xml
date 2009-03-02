@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="xsl/howto.xsl"?>
+<guide created="07/16/2004">
+    <author email="john.mcfarlane@rockfloat.com">John McFarlane</author>
+    <abstract title="Gentoo - keychain setup">
+        This document will go thru a step by step setup of keychain on
+        gentoo linux.  Keychain is used to help make ssh issues more
+        simple by remembering your passwords for you.
+    </abstract>
+    <change date="07/16/2004 @21:00">Added info for gnome users</change>
+    <change date="06/24/2007 @22:48">Remove gnomerc change; add use of
+    --quiet for non-interactive shells; remove some cruft; use gpasswd
+    rather than vigr</change>
+    <change date="08/04/2007 @11:01">Removed dsa keys</change>
+    
+    <action title="Install some needed packages" anchor="install">
+        <code>
+root# emerge keychain
+        </code>
+        You could emerge <lt>gtk2-ssh-askpass</lt> if you want to graphically be
+        prompted for your passphrase rather than via your shell.
+    </action>
+    
+    <action title="Create public and private keys" anchor="keys">
+        You will need ssh keys that are used to allow ssh access in a
+        secure fashion.  You will want to pick a secure password for these
+        things.
+        <code>
+user# ssh-keygen -t rsa  <cmt># Follow the prompts</cmt>
+        </code>
+        Now you need to create an authorized_keys file to be used on every
+        computer you will want to ssh to
+        <code>
+user# cd ~/.ssh
+user# cat id_rsa.pub >> authorized_keys
+        </code>
+        Now copy this file to the machines you want access to
+        <code>
+user# scp authorized_keys USER@HOST:.ssh/authorized_keys
+        </code>
+    </action>
+    
+    <action title="Setup bash profile to use keychain" anchor="bash_profile">
+        Edit your <lt>~/.bash_profile</lt> file and add the following near
+        the top (I put this above the .bashrc include (the HOSTNAME below
+        is literal by the way, cut and paste directly):
+        <code>
+keychain ~/.ssh/id_rsa
+. ~/.keychain/${HOSTNAME}-sh
+        </code>
+        If you happen to have a conditional statement in your
+        <lt>.bashrc</lt> that checks for a non-interactive shell be sure
+        to add keychain there too, being sure to use the <lt>--quiet</lt>
+        switch:
+        <code>
+# Test for an interactive shell.  There is no need to set anything
+# past this point for scp and rcp, and it's important to refrain from
+# outputting anything in those cases.
+if [[ $- != *i* ]] ; then
+    # Use keychain:
+    keychain --quiet ~/.ssh/id_rsa
+    . ~/.keychain/${HOSTNAME}-sh
+
+    # Shell is non-interactive.  Be done now!
+    return
+fi
+        </code>
+        Now everytime you open a console up, you will see keychain
+        startup.  Note that the first time Keychain runs it will prompt
+        for the password you used in your rsa key. Go ahead and close your
+        gnome-terminal or whatever and open it back up again... and
+        enter your password.
+    </action>
+    
+    <action title="Try it out!" anchor="test">
+        You should now be able to ssh to the particular host without
+        having to enter a password.  Nicely done!
+    </action>
+    
+    <action title="Attention cron users, you're not done yet" anchor="cron">
+        If you use crontab, you will need to modify your scripts a bit in
+        order for your ssh-agent to be available via crontab. There are
+        probably several ways of doing this, and I really don't know if
+        this is a security no-no, but the following works for me.<p /> At
+        the top of my personal bash files called by crontab, I source my
+        profile like so:
+        <code>
+#!/bin/bash
+ 
+source ~/.bash_profile
+# Doo something
+        </code>
+        I have not tested to see if the above will work if you reference a
+        user's profile with root's crontab.  but it works nicely for a
+        normal user's crontab. Oh, and for those of you who get permission
+        denied when trying to add a personal crontab, the key is to add
+        the normal user to the cron group via gpasswd.
+        <p />
+        Good luck!
+    </action>
+    
+    <!--
+    <action title="" anchor="">
+        <code></code>
+    </action>
+    -->    
+</guide>
