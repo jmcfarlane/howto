@@ -2,7 +2,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 <xsl:output encoding="UTF-8" method="html" indent="yes"
      omit-xml-declaration="yes" />
-  <xsl:variable name="destdir">static/howto</xsl:variable>
+  <xsl:variable name="destdir">build</xsl:variable>
   <xsl:variable name="usewrapper">True</xsl:variable>
 
   <xsl:template name="content">
