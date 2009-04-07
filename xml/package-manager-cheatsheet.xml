@@ -19,6 +19,7 @@
 
   <change date="08/08/2008 @ 02:20">Initial creation</change>
   <change date="08/14/2008 @ 00:20">Equery belongs</change>
+  <change date="04/06/2009 @ 21:35">Package file listing</change>
             
   <action title="Check the version of an installed package" anchor="list">
     Frequently you need to look up what version of Apache or something
@@ -107,6 +108,26 @@
         <col><code box="false">dpkg -S /etc/services</code></col>
         <col><code box="false">rpm -qf /etc/services</code></col>
         <col><code box="false">yum provides /etc/services</code></col>
+      </row>
+    </table>
+  </action>
+
+  <action title="Check what files were installed by a package" anchor="files">
+    Frequently I need to know what files were installed by a
+    particular package.  This is especially handy when you want to
+    grep out a single file a package installed.
+    <table>
+      <header>
+        <col>Gentoo</col>
+        <col>Debian/Ubuntu</col>
+        <col>Redhat</col>
+        <col>Centos</col>
+      </header>
+      <row>
+        <col><code box="false">equery files apache</code></col>
+        <col><code box="false">dpkg -L apache2</code></col>
+        <col><code box="false">rpm -ql httpd</code></col>
+        <col><code box="false">rpm -ql httpd</code></col>
       </row>
     </table>
   </action>
