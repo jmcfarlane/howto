@@ -33,7 +33,7 @@
       </header>
       <row>
         <col><code box="false">equery list apache</code></col>
-        <col><code box="false">dpkg --list httpd</code></col>
+        <col><code box="false">dpkg --list apache2</code></col>
         <col><code box="false">rpm -qa httpd</code></col>
         <col><code box="false">yum list installed | grep httpd</code></col>
       </row>
@@ -77,8 +77,8 @@
           etc-update del apache2 default<br/>
         </code></col>
         <col><code box="false">
-          update-rc.d httpd defaults<br/>
-          update-rc.d -f httpd remove<br/>
+          update-rc.d apache2 defaults<br/>
+          update-rc.d -f apache2 remove<br/>
         </code></col>
         <col><code box="false">
           chkconfig httpd on<br/>
