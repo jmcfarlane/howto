@@ -19,6 +19,9 @@
   <change date="08/09/2008 @ 01:11">
     Added config setting to only use a pager when needed (Thanks jw)
   </change>
+  <change date="10/07/2009 @ 14:09">
+    Fix spelling/grammar defect (Thanks Andreas)
+  </change>
    
   <action title="Installation" anchor="install">
     Git is really easy to install on Gentoo:
@@ -73,7 +76,7 @@ EOF
     </code>
   </action>
 
-  <action title="You're first repository" anchor="first-repo">
+  <action title="Your first repository" anchor="first-repo">
     Let's just jump right in.  Let's say you want to work on a little
     Python project that tests your knowledge of services and the tcp
     ports they use.  We'd start off by doing something like this:
@@ -115,7 +118,7 @@ svctester.py
     <lt>.svn</lt> directories.
   </action>
         
-  <action title="You're first branch" anchor="first-branch">
+  <action title="Your first branch" anchor="first-branch">
     Something you'll learn about Git is that it's meant to make
     branching easy, really easy.  First let's look to see what
     branches we have already:

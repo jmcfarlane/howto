@@ -10,7 +10,7 @@
         </title>
         <link type="text/css"
               rel="stylesheet"
-              href="http://static-01.rockfloat.com/lib/commons.css" />
+              href="http://static-01.rockfloat.com/lib/commons-min.css" />
       </head>
       <body id="body">
         <div class="main" align="center">
@@ -55,7 +55,7 @@
             </div>
         </div>
         <script type="text/javascript"
-                src="http://static-02.rockfloat.com/lib/commons.js">
+                src="http://static-02.rockfloat.com/lib/commons-min.js">
         </script>
       </body>
     </html>
