@@ -22,6 +22,9 @@
   <change date="10/07/2009 @ 14:09">
     Fix spelling/grammar defect (Thanks Andreas)
   </change>
+  <change date="03/01/2010 @ 13:55">
+    Added info on how to prune references to remote branches
+  </change>
    
   <action title="Installation" anchor="install">
     Git is really easy to install on Gentoo:
@@ -523,4 +526,16 @@ user# git whatchanged --since="3 days ago"
     <link uri="#remote-repo-old-school">how to publish</link>
     a repository.
   </action>
+
+  <action title="How do you purge references to remote branches?"
+          anchor="purge_references_to_remote_branches">
+    When you pull down a remote branch your local repository remembers
+    that branch.  So if the remote branch is deleted by someone else,
+    your local repository will still think it's there.  Here's how to
+    remove all local references to remote branches that no longer
+    exist:
+
+    <code>git remote prune origin</code>
+  </action>
+
 </guide>
