@@ -2,7 +2,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 <xsl:output encoding="UTF-8" method="html" indent="yes"
      omit-xml-declaration="yes" />
-  <xsl:variable name="destdir">build</xsl:variable>
+  <xsl:variable name="destdir">howto</xsl:variable>
   <xsl:variable name="usewrapper">True</xsl:variable>
 
   <xsl:template name="content">
@@ -28,7 +28,7 @@
           <xsl:apply-templates />
         </xsl:for-each>
       <br/><br/>
-                        
+
       <!-- toc -->
       <div style="margin-top: 10px;">
         <b>Table of Contents:</b>
@@ -58,10 +58,10 @@
           </xsl:if>
         </ol>
       </div>
-        
+
       <br/>
       <div class="hr"></div>
-        
+
       <!-- begin howto -->
       <xsl:for-each select="/guide/action">
         <a id="{@anchor}" name="{@anchor}"></a>
@@ -73,7 +73,7 @@
             <xsl:number value="position()" format="1. " />
             <xsl:value-of select="./@title" />
         </h4>
-        
+
         <div id="o{position()}" class="howto">
           <xsl:apply-templates/>
         </div>
@@ -88,7 +88,7 @@
       <xsl:call-template name="footer" />
     </div>
   </xsl:template>
-    
+
   <xsl:template name="changelog">
     <xsl:if test="change != ''">
       <div id="changelog">
@@ -113,7 +113,7 @@
     This document was originally created on
     <xsl:value-of select="/guide/@created" />
   </xsl:template>
-    
+
   <xsl:template name="footer">
     <br/><br/>
     <xsl:if test="/guide/convention != ''">
@@ -126,7 +126,7 @@
             <li><xsl:apply-templates/></li>
           </xsl:for-each>
         </ol>
-      </div> 
+      </div>
     </xsl:if>
     <br/>
     <p>
@@ -139,7 +139,7 @@
       </i>
     </p>
   </xsl:template>
-    
+
   <!-- start things off -->
   <xsl:template match="/guide">
     <xsl:call-template name="wrap" />

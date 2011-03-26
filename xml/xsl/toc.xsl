@@ -4,7 +4,7 @@
             method="html"
             indent="yes"
             omit-xml-declaration="yes" />
-  <xsl:variable name="destdir">build</xsl:variable>
+  <xsl:variable name="destdir">howto</xsl:variable>
   <xsl:variable name="usewrapper">True</xsl:variable>
 
   <xsl:template name="content">
@@ -38,7 +38,7 @@
     }
     </script>
   </xsl:template>
-  
+
   <!-- start things off -->
   <xsl:template match="/files">
     <xsl:call-template name="wrap" />

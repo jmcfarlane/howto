@@ -63,7 +63,7 @@
 
   <!-- Start things off -->
   <xsl:template name="wrap">
-    <xsl:variable name="usewrapper">True</xsl:variable>
+    <xsl:variable name="usewrapper">False</xsl:variable>
     <xsl:choose>
       <xsl:when test="$usewrapper = 'True'">
         <xsl:call-template name="do_wrap" />
